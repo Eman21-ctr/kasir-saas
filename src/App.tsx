@@ -20,6 +20,9 @@ import ReportsPage from './pages/dashboard/ReportsPage';
 import ExpensesPage from './pages/dashboard/expenses/ExpensesPage';
 import SettingsPage from './pages/dashboard/SettingsPage';
 import BusinessInfoPage from './pages/dashboard/settings/BusinessInfoPage';
+import PrinterSettingsPage from './pages/dashboard/settings/PrinterSettingsPage';
+import UserGuidePage from './pages/dashboard/settings/UserGuidePage';
+import PrivacyPolicyPage from './pages/dashboard/settings/PrivacyPolicyPage';
 import AuthGuard from './components/AuthGuard';
 
 function App() {
@@ -67,6 +70,9 @@ function App() {
           <Route path="settings" element={<SettingsPage />} />
           <Route path="settings/profile" element={<BusinessInfoPage />} />
           <Route path="settings/loyalty" element={<LoyaltySettingsPage />} />
+          <Route path="settings/printer" element={<PrinterSettingsPage />} />
+          <Route path="settings/guide" element={<UserGuidePage />} />
+          <Route path="settings/privacy" element={<PrivacyPolicyPage />} />
         </Route>
 
         {/* Default catch all */}

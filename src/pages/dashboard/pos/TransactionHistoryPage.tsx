@@ -33,7 +33,7 @@ export default function TransactionHistoryPage() {
     const [selectedTrx, setSelectedTrx] = useState<Transaction | null>(null);
 
     // Date Filters
-    const [period, setPeriod] = useState<Period>('today');
+    const [period, setPeriod] = useState<Period>('month');
     const [showPeriodPicker, setShowPeriodPicker] = useState(false);
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
@@ -48,7 +48,9 @@ export default function TransactionHistoryPage() {
 
         switch (period) {
             case 'today':
-                start = new Date(now.setHours(0, 0, 0, 0));
+                // Reset today to 00:00:00 without mutating 'now' for end
+                start = new Date(now);
+                start.setHours(0, 0, 0, 0);
                 end = new Date();
                 break;
             case 'month':
@@ -65,7 +67,8 @@ export default function TransactionHistoryPage() {
                 end.setHours(23, 59, 59);
                 break;
             default:
-                start = new Date(now.setHours(0, 0, 0, 0));
+                start = new Date(now);
+                start.setHours(0, 0, 0, 0);
                 end = new Date();
         }
         return { start, end };
@@ -77,12 +80,17 @@ export default function TransactionHistoryPage() {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
 
-            const { data: business } = await supabase
+            const { data: business, error: bizError } = await supabase
                 .from('businesses')
-                .select('id, logo_url')
+                .select('*')
                 .eq('user_id', user.id)
                 .single();
-            if (!business) return;
+
+            if (bizError || !business) {
+                console.error("Business not found:", bizError);
+                return;
+            }
+
             setLogoUrl(business.logo_url || '');
 
             const { start, end } = getDateRange();

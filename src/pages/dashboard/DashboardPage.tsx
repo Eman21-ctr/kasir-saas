@@ -40,15 +40,15 @@ export default function DashboardPage() {
                 setBusinessName(business.business_name);
 
                 // Today's transactions
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
+                const startDate = new Date();
+                startDate.setHours(0, 0, 0, 0);
 
                 const { data: transactions } = await supabase
                     .from('transactions')
-                    .select('total_amount')
+                    .select('total_amount, payment_status, created_at')
                     .eq('business_id', business.id)
                     .eq('payment_status', 'paid')
-                    .gte('created_at', today.toISOString());
+                    .gte('created_at', startDate.toISOString());
 
                 setTodaySales(transactions?.reduce((sum, t) => sum + t.total_amount, 0) || 0);
                 setTodayTransactions(transactions?.length || 0);

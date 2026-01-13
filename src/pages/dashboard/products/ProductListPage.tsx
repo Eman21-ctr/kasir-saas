@@ -89,7 +89,7 @@ export default function ProductListPage() {
                             <FolderOpen className="w-5 h-5" />
                         </button>
                         <button
-                            onClick={() => navigate('/dashboard/products/add')}
+                            onClick={() => navigate('/dashboard/products/new')}
                             className="bg-emerald-500 text-white px-4 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-95 transition-all"
                         >
                             <Plus className="w-4 h-4" />

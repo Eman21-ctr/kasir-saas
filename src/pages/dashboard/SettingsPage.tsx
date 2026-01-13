@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { User, Store, LogOut, Printer, ChevronRight, HelpCircle, Shield, History, Sparkles } from 'lucide-react';
+import { Store, LogOut, Printer, ChevronRight, Shield, Sparkles, BookOpen } from 'lucide-react';
 
 export default function SettingsPage() {
     const navigate = useNavigate();
@@ -75,25 +75,34 @@ export default function SettingsPage() {
                             onClick={() => navigate('/dashboard/settings/profile')}
                         />
                         <MenuParams
-                            icon={History}
-                            label="Riwayat Transaksi"
-                            onClick={() => navigate('/dashboard/pos/history')}
-                        />
-                        <MenuParams
                             icon={Sparkles}
                             label="Loyalty & Diskon"
                             sub="Atur Poin & Potongan Member"
                             onClick={() => navigate('/dashboard/settings/loyalty')}
                         />
-                        <MenuParams icon={Printer} label="Koneksi Printer Struk" sub="Bluetooth / USB" />
+                        <MenuParams
+                            icon={Printer}
+                            label="Koneksi Printer Struk"
+                            sub="Bluetooth / USB"
+                            onClick={() => navigate('/dashboard/settings/printer')}
+                        />
                     </div>
                 </div>
 
                 <div className="space-y-4">
                     <h3 className="font-bold text-slate-900 text-xs ml-2 uppercase tracking-widest opacity-50">Dukungan</h3>
                     <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm">
-                        <MenuParams icon={HelpCircle} label="Pusat Bantuan & Tutorial" />
-                        <MenuParams icon={Shield} label="Kebijakan Privasi" />
+                        <MenuParams
+                            icon={BookOpen}
+                            label="Panduan Penggunaan"
+                            sub="Tutorial & Edukasi Fitur"
+                            onClick={() => navigate('/dashboard/settings/guide')}
+                        />
+                        <MenuParams
+                            icon={Shield}
+                            label="Kebijakan Privasi"
+                            onClick={() => navigate('/dashboard/settings/privacy')}
+                        />
                     </div>
                 </div>
 
