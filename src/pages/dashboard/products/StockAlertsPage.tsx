@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, AlertTriangle, XCircle, Plus, Package, Clock, Store } from 'lucide-react';
-import { cn } from '../../../lib/utils';
+import { ArrowLeft, AlertTriangle, Plus, Package, Clock, Store } from 'lucide-react';
 
 type Product = {
     id: number;

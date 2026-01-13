@@ -13,7 +13,7 @@ export default function AddStockPage() {
     const [product, setProduct] = useState<any>(null);
     const [qty, setQty] = useState(1);
     const [purchasePrice, setPurchasePrice] = useState('');
-    const [notes, setNotes] = useState('');
+    const [notes] = useState('');
     const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split('T')[0]);
 
     useEffect(() => {

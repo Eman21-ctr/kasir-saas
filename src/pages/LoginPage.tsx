@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { Lock, Mail, Loader2, ArrowRight, Phone } from 'lucide-react';
@@ -7,7 +7,7 @@ export default function LoginPage() {
     const navigate = useNavigate();
     // Default isLogin true. Registration is now mainly handled via Onboarding (/activate).
     // But we keep the toggle just in case admin wants to register via email.
-    const [isLogin, setIsLogin] = useState(true);
+    const [isLogin] = useState(true);
 
     // We use a generic "identifier" state which can be Email OR Phone
     const [identifier, setIdentifier] = useState('');
@@ -16,7 +16,7 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const handleAuth = async (e: React.FormEvent) => {
+    const handleAuth = async (e: { preventDefault: () => void }) => {
         e.preventDefault();
         setLoading(true);
         setError(null);

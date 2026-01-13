@@ -1,4 +1,4 @@
-import React from 'react';
+// PrintReceipt Component
 
 type ReceiptItem = {
     name: string;
