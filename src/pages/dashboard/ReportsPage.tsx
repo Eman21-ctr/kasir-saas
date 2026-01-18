@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Calendar, TrendingUp, TrendingDown, ShoppingCart, Apple as PiggyBank, ChevronDown, Share2, Download, Loader2 } from 'lucide-react';
+import { Calendar, TrendingUp, TrendingDown, ShoppingCart, Apple as PiggyBank, ChevronDown, Share2, Download, Loader2, Package, Users, Wallet } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import * as XLSX from 'xlsx';
 
 type Period = 'today' | 'week' | 'month' | 'custom';
+type ReportType = 'sales' | 'stock' | 'member' | 'expense';
 
 export default function ReportsPage() {
     const [loading, setLoading] = useState(true);
     const [period, setPeriod] = useState<Period>('today');
+    const [reportType, setReportType] = useState<ReportType>('sales');
     const [showPeriodPicker, setShowPeriodPicker] = useState(false);
+    const [showReportPicker, setShowReportPicker] = useState(false);
 
     // Date range for custom
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
@@ -19,6 +23,13 @@ export default function ReportsPage() {
     const [totalTransactions, setTotalTransactions] = useState(0);
     const [totalProfit, setTotalProfit] = useState(0);
     const [avgBasket, setAvgBasket] = useState(0);
+    // Data for different reports
+    const [transactions, setTransactions] = useState<any[]>([]);
+    const [products, setProducts] = useState<any[]>([]);
+    const [members, setMembers] = useState<any[]>([]);
+    const [expensesList, setExpensesList] = useState<any[]>([]);
+    const [categoryExpenses, setCategoryExpenses] = useState<{ category: string, amount: number }[]>([]);
+
     const [dailyData, setDailyData] = useState<{ date: string, amount: number }[]>([]);
 
     // Expenses
@@ -27,7 +38,7 @@ export default function ReportsPage() {
 
     useEffect(() => {
         fetchReports();
-    }, [period, startDate, endDate]);
+    }, [period, reportType, startDate, endDate]);
 
     const getDateRange = () => {
         const now = new Date();
@@ -74,48 +85,106 @@ export default function ReportsPage() {
 
             const { start, end } = getDateRange();
 
-            // Fetch transactions
-            const { data: transactions } = await supabase
-                .from('transactions')
-                .select('id, total_amount, created_at')
-                .eq('business_id', business.id)
-                .eq('payment_status', 'paid')
-                .gte('created_at', start.toISOString())
-                .lte('created_at', end.toISOString());
+            if (reportType === 'sales') {
+                // Fetch transactions
+                const { data: trx } = await supabase
+                    .from('transactions')
+                    .select('*, members(name)')
+                    .eq('business_id', business.id)
+                    .eq('payment_status', 'paid')
+                    .gte('created_at', start.toISOString())
+                    .lte('created_at', end.toISOString())
+                    .order('created_at', { ascending: false });
 
-            // Fetch transaction items for profit
-            const { data: items } = await supabase
-                .from('transaction_items')
-                .select('profit, transaction_id')
-                .in('transaction_id', transactions?.map(t => t.id) || []);
+                setTransactions(trx || []);
 
-            // Fetch expenses
-            const { data: expenses } = await supabase
-                .from('expenses')
-                .select('amount')
-                .eq('business_id', business.id)
-                .gte('expense_date', start.toISOString().split('T')[0])
-                .lte('expense_date', end.toISOString().split('T')[0]);
+                // Fetch transaction items for profit
+                const { data: items } = await supabase
+                    .from('transaction_items')
+                    .select('profit, transaction_id')
+                    .in('transaction_id', trx?.map(t => t.id) || []);
 
-            // Calculate stats
-            const sales = transactions?.reduce((sum, t) => sum + t.total_amount, 0) || 0;
-            const profit = items?.reduce((sum, i) => sum + (i.profit || 0), 0) || 0;
-            const expenseTotal = expenses?.reduce((sum, e) => sum + e.amount, 0) || 0;
-            const count = transactions?.length || 0;
+                // Calculate stats
+                const sales = trx?.reduce((sum, t) => sum + t.total_amount, 0) || 0;
+                const profit = items?.reduce((sum, i) => sum + (i.profit || 0), 0) || 0;
+                const count = trx?.length || 0;
 
-            setTotalSales(sales);
-            setTotalTransactions(count);
-            setTotalProfit(profit);
-            setTotalExpenses(expenseTotal);
-            setAvgBasket(count > 0 ? Math.round(sales / count) : 0);
+                setTotalSales(sales);
+                setTotalTransactions(count);
+                setTotalProfit(profit);
+                setAvgBasket(count > 0 ? Math.round(sales / count) : 0);
 
-            // Daily breakdown
-            const daily: { [key: string]: number } = {};
-            transactions?.forEach(t => {
-                const day = new Date(t.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
-                daily[day] = (daily[day] || 0) + t.total_amount;
-            });
-            setDailyData(Object.entries(daily).map(([date, amount]) => ({ date, amount })));
+                // Daily breakdown
+                const daily: { [key: string]: number } = {};
+                trx?.forEach(t => {
+                    const day = new Date(t.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+                    daily[day] = (daily[day] || 0) + t.total_amount;
+                });
+                setDailyData(Object.entries(daily).map(([date, amount]) => ({ date, amount })));
+
+                // Also fetch expenses for net profit
+                const { data: exp } = await supabase
+                    .from('expenses')
+                    .select('amount')
+                    .eq('business_id', business.id)
+                    .gte('expense_date', start.toISOString().split('T')[0])
+                    .lte('expense_date', end.toISOString().split('T')[0]);
+
+                setTotalExpenses(exp?.reduce((sum, e) => sum + e.amount, 0) || 0);
+
+            } else if (reportType === 'stock') {
+                // Fetch products with stock movement? No, current stock as requested
+                const { data: prod } = await supabase
+                    .from('products')
+                    .select('*, categories(name)')
+                    .eq('business_id', business.id)
+                    .order('stock_quantity', { ascending: true });
+
+                setProducts(prod || []);
+
+                const totalVal = prod?.reduce((sum, p) => sum + (p.stock_quantity * p.purchase_price), 0) || 0;
+                const lowStockCount = prod?.filter(p => p.stock_quantity <= p.min_stock).length || 0;
+
+                setTotalSales(totalVal); // Reusing state for KPI
+                setTotalTransactions(lowStockCount); // Reusing state for KPI
+
+            } else if (reportType === 'member') {
+                const { data: mem } = await supabase
+                    .from('members')
+                    .select('*')
+                    .eq('business_id', business.id)
+                    .order('total_spending', { ascending: false });
+
+                setMembers(mem || []);
+
+                const count = mem?.length || 0;
+                const totalSpend = mem?.reduce((sum, m) => sum + (m.total_spending || 0), 0) || 0;
+
+                setTotalTransactions(count);
+                setAvgBasket(count > 0 ? Math.round(totalSpend / count) : 0);
+
+            } else if (reportType === 'expense') {
+                const { data: exp } = await supabase
+                    .from('expenses')
+                    .select('*, expense_categories(name)')
+                    .eq('business_id', business.id)
+                    .gte('expense_date', start.toISOString().split('T')[0])
+                    .lte('expense_date', end.toISOString().split('T')[0])
+                    .order('expense_date', { ascending: false });
+
+                setExpensesList(exp || []);
+
+                const total = exp?.reduce((sum, e) => sum + e.amount, 0) || 0;
+                setTotalExpenses(total);
+
+                // Group by category
+                const catMap: { [key: string]: number } = {};
+                exp?.forEach(e => {
+                    const catName = e.expense_categories?.name || 'Lainnya';
+                    catMap[catName] = (catMap[catName] || 0) + e.amount;
+                });
+                setCategoryExpenses(Object.entries(catMap).map(([category, amount]) => ({ category, amount })));
+            }
 
         } catch (error) {
             console.error("Error:", error);
@@ -131,6 +200,63 @@ export default function ReportsPage() {
             case 'month': return 'Bulan Ini';
             case 'custom': return 'Kustom';
         }
+    };
+
+    const reportLabel = () => {
+        switch (reportType) {
+            case 'sales': return 'Laporan Penjualan';
+            case 'stock': return 'Laporan Stok Barang';
+            case 'member': return 'Laporan Member';
+            case 'expense': return 'Laporan Pengeluaran';
+        }
+    };
+
+    const handleExport = () => {
+        let exportData: any[] = [];
+        let fileName = `Laporan_${reportType}_${new Date().toISOString().split('T')[0]}`;
+
+        if (reportType === 'sales') {
+            exportData = transactions.map(t => ({
+                'Tanggal': new Date(t.created_at).toLocaleString('id-ID'),
+                'No. Transaksi': t.transaction_number,
+                'Member': t.members?.name || '-',
+                'Metode': t.payment_method,
+                'Total Bersih': t.total_amount
+            }));
+        } else if (reportType === 'stock') {
+            exportData = products.map(p => ({
+                'Produk': p.name,
+                'SKU': p.sku || '-',
+                'Kategori': p.categories?.name || '-',
+                'Stok': p.stock_quantity,
+                'Unit': p.unit,
+                'Harga Beli': p.purchase_price,
+                'Harga Jual': p.selling_price
+            }));
+        } else if (reportType === 'member') {
+            exportData = members.map(m => ({
+                'Nama': m.name,
+                'Telepon': m.phone,
+                'Level': m.member_level,
+                'Poin': m.total_points,
+                'Total Transaksi': m.total_transactions,
+                'Total Belanja': m.total_spending,
+                'Tgl Gabung': new Date(m.join_date).toLocaleDateString('id-ID')
+            }));
+        } else if (reportType === 'expense') {
+            exportData = expensesList.map(e => ({
+                'Tanggal': e.expense_date,
+                'Kategori': e.expense_categories?.name || '-',
+                'Nama': e.name,
+                'Jumlah': e.amount,
+                'Catatan': e.notes || '-'
+            }));
+        }
+
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Data");
+        XLSX.writeFile(wb, `${fileName}.xlsx`);
     };
 
     const netProfit = totalProfit - totalExpenses;
@@ -161,21 +287,55 @@ export default function ReportsPage() {
 
             <div className="p-6 space-y-6 pt-2">
                 <div>
-                    <h1 className="text-2xl font-extrabold text-slate-900">Laporan Keuangan</h1>
+                    <h1 className="text-2xl font-extrabold text-slate-900">Laporan</h1>
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Performa Bisnis Anda</p>
                 </div>
 
-                {/* Period Selector */}
-                <button
-                    onClick={() => setShowPeriodPicker(!showPeriodPicker)}
-                    className="w-full bg-white p-4 rounded-xl border border-slate-200 flex items-center justify-between shadow-sm"
-                >
-                    <div className="flex items-center gap-3">
-                        <Calendar className="w-5 h-5 text-emerald-500" />
-                        <span className="font-bold text-slate-700">{periodLabel()}</span>
-                    </div>
-                    <ChevronDown className={cn("w-5 h-5 text-slate-400 transition-transform", showPeriodPicker && "rotate-180")} />
-                </button>
+                {/* Report Type Selector */}
+                <div className="space-y-4">
+                    <button
+                        onClick={() => setShowReportPicker(!showReportPicker)}
+                        className="w-full bg-white p-4 rounded-xl border border-slate-200 flex items-center justify-between shadow-sm hover:border-emerald-500/30 transition-all"
+                    >
+                        <div className="flex items-center gap-3">
+                            <TrendingUp className="w-5 h-5 text-emerald-500" />
+                            <span className="font-bold text-slate-700">{reportLabel()}</span>
+                        </div>
+                        <ChevronDown className={cn("w-5 h-5 text-slate-400 transition-transform", showReportPicker && "rotate-180")} />
+                    </button>
+
+                    {showReportPicker && (
+                        <div className="bg-white rounded-xl border border-slate-200 shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                            {(['sales', 'stock', 'member', 'expense'] as ReportType[]).map((r) => (
+                                <button
+                                    key={r}
+                                    onClick={() => { setReportType(r); setShowReportPicker(false); }}
+                                    className={cn(
+                                        "w-full p-4 text-left font-bold border-b border-slate-50 last:border-0 transition-colors",
+                                        reportType === r ? "bg-emerald-50 text-emerald-700" : "text-slate-600 hover:bg-slate-50"
+                                    )}
+                                >
+                                    {r === 'sales' && 'Laporan Penjualan'}
+                                    {r === 'stock' && 'Laporan Stok Barang'}
+                                    {r === 'member' && 'Laporan Member'}
+                                    {r === 'expense' && 'Laporan Pengeluaran'}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Period Selector */}
+                    <button
+                        onClick={() => setShowPeriodPicker(!showPeriodPicker)}
+                        className="w-full bg-white p-4 rounded-xl border border-slate-200 flex items-center justify-between shadow-sm hover:border-emerald-500/30 transition-all"
+                    >
+                        <div className="flex items-center gap-3">
+                            <Calendar className="w-5 h-5 text-emerald-500" />
+                            <span className="font-bold text-slate-700">{periodLabel()}</span>
+                        </div>
+                        <ChevronDown className={cn("w-5 h-5 text-slate-400 transition-transform", showPeriodPicker && "rotate-180")} />
+                    </button>
+                </div>
 
                 {showPeriodPicker && (
                     <div className="bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden">
@@ -213,57 +373,8 @@ export default function ReportsPage() {
                     </div>
                 )}
 
-                {/* Main Stats */}
-                <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-6 text-white shadow-lg">
-                    <p className="text-emerald-100 text-sm font-medium mb-1">Total Penjualan</p>
-                    <h2 className="text-3xl font-extrabold mb-4">Rp {totalSales.toLocaleString()}</h2>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-white/10 rounded-xl p-3">
-                            <p className="text-emerald-100 text-[10px] font-bold uppercase">Transaksi</p>
-                            <p className="text-xl font-bold">{totalTransactions}</p>
-                        </div>
-                        <div className="bg-white/10 rounded-xl p-3">
-                            <p className="text-emerald-100 text-[10px] font-bold uppercase">Rata-rata</p>
-                            <p className="text-xl font-bold">Rp {avgBasket.toLocaleString()}</p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Profit & Expense */}
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-                        <div className="flex items-center gap-2 mb-2">
-                            <TrendingUp className="w-4 h-4 text-green-500" />
-                            <span className="text-xs font-bold text-slate-400 uppercase">Laba Kotor</span>
-                        </div>
-                        <p className="text-xl font-bold text-green-600">Rp {totalProfit.toLocaleString()}</p>
-                    </div>
-                    <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-                        <div className="flex items-center gap-2 mb-2">
-                            <TrendingDown className="w-4 h-4 text-red-500" />
-                            <span className="text-xs font-bold text-slate-400 uppercase">Pengeluaran</span>
-                        </div>
-                        <p className="text-xl font-bold text-red-500">Rp {totalExpenses.toLocaleString()}</p>
-                    </div>
-                </div>
-
-                {/* Net Profit */}
-                <div className={cn(
-                    "p-4 rounded-xl border-2 flex items-center justify-between",
-                    netProfit >= 0 ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
-                )}>
-                    <div className="flex items-center gap-3">
-                        <PiggyBank className={cn("w-6 h-6", netProfit >= 0 ? "text-green-600" : "text-red-600")} />
-                        <span className="font-bold text-slate-700">Laba Bersih</span>
-                    </div>
-                    <span className={cn("text-xl font-extrabold", netProfit >= 0 ? "text-green-600" : "text-red-600")}>
-                        Rp {netProfit.toLocaleString()}
-                    </span>
-                </div>
-
-                {/* Daily Chart */}
-                {dailyData.length > 0 && (
+                {/* Daily Chart (Only for Sales) */}
+                {reportType === 'sales' && dailyData.length > 0 && (
                     <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
                         <h3 className="font-bold text-slate-700 mb-4">Grafik Penjualan</h3>
                         <div className="flex items-end gap-2 h-32">
@@ -280,13 +391,238 @@ export default function ReportsPage() {
                     </div>
                 )}
 
+                {/* Main Content (Table) */}
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                        <h3 className="font-bold text-slate-700">Detail {reportLabel()}</h3>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+                                {reportType === 'sales' && (
+                                    <tr>
+                                        <th className="px-4 py-3">Waktu</th>
+                                        <th className="px-4 py-3">No. Transaksi</th>
+                                        <th className="px-4 py-3">Member</th>
+                                        <th className="px-4 py-3 text-right">Total</th>
+                                    </tr>
+                                )}
+                                {reportType === 'stock' && (
+                                    <tr>
+                                        <th className="px-4 py-3">Produk</th>
+                                        <th className="px-4 py-3">Kategori</th>
+                                        <th className="px-4 py-3 text-right">Stok</th>
+                                        <th className="px-4 py-3 text-right">Modal</th>
+                                    </tr>
+                                )}
+                                {reportType === 'member' && (
+                                    <tr>
+                                        <th className="px-4 py-3">Nama</th>
+                                        <th className="px-4 py-3">Level</th>
+                                        <th className="px-4 py-3 text-right">Poin</th>
+                                        <th className="px-4 py-3 text-right">Total Belanja</th>
+                                    </tr>
+                                )}
+                                {reportType === 'expense' && (
+                                    <tr>
+                                        <th className="px-4 py-3">Tanggal</th>
+                                        <th className="px-4 py-3">Kategori</th>
+                                        <th className="px-4 py-3">Nama</th>
+                                        <th className="px-4 py-3 text-right">Jumlah</th>
+                                    </tr>
+                                )}
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {reportType === 'sales' && transactions.length > 0 ? transactions.map((t) => (
+                                    <tr key={t.id} className="hover:bg-slate-50">
+                                        <td className="px-4 py-3 whitespace-nowrap">{new Date(t.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</td>
+                                        <td className="px-4 py-3 font-medium uppercase">{t.transaction_number}</td>
+                                        <td className="px-4 py-3">{t.members?.name || '-'}</td>
+                                        <td className="px-4 py-3 text-right font-bold">Rp {t.total_amount?.toLocaleString()}</td>
+                                    </tr>
+                                )) : null}
+                                {reportType === 'stock' && products.length > 0 ? products.map((p) => (
+                                    <tr key={p.id} className="hover:bg-slate-50">
+                                        <td className="px-4 py-3">
+                                            <p className="font-bold">{p.name}</p>
+                                            <p className="text-[10px] text-slate-400">{p.sku || '-'}</p>
+                                        </td>
+                                        <td className="px-4 py-3">{p.categories?.name || '-'}</td>
+                                        <td className={cn("px-4 py-3 text-right font-bold", p.stock_quantity <= p.min_stock ? "text-red-500" : "text-emerald-500")}>
+                                            {p.stock_quantity} {p.unit}
+                                        </td>
+                                        <td className="px-4 py-3 text-right text-slate-500">
+                                            Rp {p.purchase_price?.toLocaleString()}
+                                        </td>
+                                    </tr>
+                                )) : null}
+                                {reportType === 'member' && members.length > 0 ? members.map((m) => (
+                                    <tr key={m.id} className="hover:bg-slate-50">
+                                        <td className="px-4 py-3">
+                                            <p className="font-bold">{m.name}</p>
+                                            <p className="text-[10px] text-slate-400">{m.phone}</p>
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <span className={cn(
+                                                "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase",
+                                                m.member_level === 'platinum' ? "bg-purple-100 text-purple-700" :
+                                                    m.member_level === 'gold' ? "bg-amber-100 text-amber-700" :
+                                                        m.member_level === 'silver' ? "bg-slate-100 text-slate-700" : "bg-emerald-100 text-emerald-700"
+                                            )}>
+                                                {m.member_level}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 text-right">{m.total_points}</td>
+                                        <td className="px-4 py-3 text-right font-bold">Rp {m.total_spending?.toLocaleString()}</td>
+                                    </tr>
+                                )) : null}
+                                {reportType === 'expense' && expensesList.length > 0 ? expensesList.map((e) => (
+                                    <tr key={e.id} className="hover:bg-slate-50">
+                                        <td className="px-4 py-3 whitespace-nowrap">{new Date(e.expense_date).toLocaleDateString('id-ID')}</td>
+                                        <td className="px-4 py-3">{e.expense_categories?.name || '-'}</td>
+                                        <td className="px-4 py-3 font-medium">{e.name}</td>
+                                        <td className="px-4 py-3 text-right font-bold text-red-500">Rp {e.amount?.toLocaleString()}</td>
+                                    </tr>
+                                )) : null}
+                            </tbody>
+                        </table>
+                        {((reportType === 'sales' && !transactions.length) ||
+                            (reportType === 'stock' && !products.length) ||
+                            (reportType === 'member' && !members.length) ||
+                            (reportType === 'expense' && !expensesList.length)) && (
+                                <div className="p-8 text-center text-slate-400 font-medium">
+                                    Tidak ada data untuk periode ini
+                                </div>
+                            )}
+                    </div>
+                </div>
+
+                {/* KPI Cards section (Below Table as requested) */}
+                <div className="space-y-4">
+                    {reportType === 'sales' && (
+                        <>
+                            <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-6 text-white shadow-lg">
+                                <p className="text-emerald-100 text-sm font-medium mb-1">Total Penjualan</p>
+                                <h2 className="text-3xl font-extrabold mb-4">Rp {totalSales.toLocaleString()}</h2>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-white/10 rounded-xl p-3">
+                                        <p className="text-emerald-100 text-[10px] font-bold uppercase">Transaksi</p>
+                                        <p className="text-xl font-bold">{totalTransactions}</p>
+                                    </div>
+                                    <div className="bg-white/10 rounded-xl p-3">
+                                        <p className="text-emerald-100 text-[10px] font-bold uppercase">Rata-rata</p>
+                                        <p className="text-xl font-bold">Rp {avgBasket.toLocaleString()}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <TrendingUp className="w-4 h-4 text-green-500" />
+                                        <span className="text-xs font-bold text-slate-400 uppercase">Laba Kotor</span>
+                                    </div>
+                                    <p className="text-xl font-bold text-green-600">Rp {totalProfit.toLocaleString()}</p>
+                                </div>
+                                <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <TrendingDown className="w-4 h-4 text-red-500" />
+                                        <span className="text-xs font-bold text-slate-400 uppercase">Pengeluaran</span>
+                                    </div>
+                                    <p className="text-xl font-bold text-red-500">Rp {totalExpenses.toLocaleString()}</p>
+                                </div>
+                            </div>
+                            <div className={cn(
+                                "p-4 rounded-xl border-2 flex items-center justify-between",
+                                netProfit >= 0 ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
+                            )}>
+                                <div className="flex items-center gap-3">
+                                    <PiggyBank className={cn("w-6 h-6", netProfit >= 0 ? "text-green-600" : "text-red-600")} />
+                                    <span className="font-bold text-slate-700">Laba Bersih</span>
+                                </div>
+                                <span className={cn("text-xl font-extrabold", netProfit >= 0 ? "text-green-600" : "text-red-600")}>
+                                    Rp {netProfit.toLocaleString()}
+                                </span>
+                            </div>
+                        </>
+                    )}
+
+                    {reportType === 'stock' && (
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Package className="w-4 h-4 text-emerald-500" />
+                                    <span className="text-xs font-bold text-slate-400 uppercase">Nilai Stok</span>
+                                </div>
+                                <p className="text-xl font-bold text-emerald-600">Rp {totalSales.toLocaleString()}</p>
+                                <p className="text-[10px] text-slate-400 font-medium">Berdasarkan Harga Beli</p>
+                            </div>
+                            <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <TrendingDown className="w-4 h-4 text-red-500" />
+                                    <span className="text-xs font-bold text-slate-400 uppercase">Stok Rendah</span>
+                                </div>
+                                <p className="text-xl font-bold text-red-500">{totalTransactions} Items</p>
+                                <p className="text-[10px] text-slate-400 font-medium">Perlu Segera Restok</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {reportType === 'member' && (
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Users className="w-4 h-4 text-blue-500" />
+                                    <span className="text-xs font-bold text-slate-400 uppercase">Total Member</span>
+                                </div>
+                                <p className="text-xl font-bold text-blue-600">{totalTransactions}</p>
+                            </div>
+                            <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <TrendingUp className="w-4 h-4 text-amber-500" />
+                                    <span className="text-xs font-bold text-slate-400 uppercase">Rata-rata Belanja</span>
+                                </div>
+                                <p className="text-lg font-bold text-amber-600">Rp {avgBasket.toLocaleString()}</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {reportType === 'expense' && (
+                        <div className="space-y-4">
+                            <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="p-2 bg-red-50 rounded-lg">
+                                        <Wallet className="w-5 h-5 text-red-500" />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-bold text-slate-400 uppercase">Total Pengeluaran</p>
+                                        <h3 className="text-2xl font-black text-slate-800">Rp {totalExpenses.toLocaleString()}</h3>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3 pt-3 border-t border-slate-50">
+                                    {categoryExpenses.map((ce, i) => (
+                                        <div key={i} className="flex items-center justify-between">
+                                            <span className="text-sm font-medium text-slate-600">{ce.category}</span>
+                                            <span className="text-sm font-bold text-slate-800">Rp {ce.amount.toLocaleString()}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
                 {/* Export Buttons */}
                 <div className="grid grid-cols-2 gap-3">
-                    <button className="bg-white p-4 rounded-xl border border-slate-200 flex items-center justify-center gap-2 font-bold text-slate-600 text-sm shadow-sm">
+                    <button
+                        onClick={handleExport}
+                        className="bg-white p-4 rounded-xl border border-slate-200 flex items-center justify-center gap-2 font-bold text-slate-600 text-sm shadow-sm active:scale-95 transition-transform"
+                    >
                         <Download className="w-4 h-4" />
-                        Download PDF
+                        Download Excel
                     </button>
-                    <button className="bg-emerald-500 p-4 rounded-xl flex items-center justify-center gap-2 font-bold text-white text-sm shadow-lg shadow-emerald-500/20">
+                    <button className="bg-emerald-500 p-4 rounded-xl flex items-center justify-center gap-2 font-bold text-white text-sm shadow-lg shadow-emerald-500/20 active:scale-95 transition-transform">
                         <Share2 className="w-4 h-4" />
                         Kirim via WA
                     </button>
