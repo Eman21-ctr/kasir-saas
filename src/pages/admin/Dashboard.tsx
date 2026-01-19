@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { Users, Store, Key, LogOut, Plus, Copy, Pause, Play, Ban, Search, Activity } from 'lucide-react';
+import { Users, Store, Key, LogOut, Plus, Copy, Pause, Play, Ban, Search } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 export default function Dashboard() {
