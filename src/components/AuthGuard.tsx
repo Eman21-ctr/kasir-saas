@@ -40,10 +40,16 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-                <div className="text-center">
-                    <Loader2 className="w-10 h-10 animate-spin text-emerald-500 mx-auto mb-4" />
-                    <p className="text-slate-400 font-medium">Memeriksa sesi...</p>
+            <div className="min-h-screen bg-white flex flex-col items-center justify-center animate-in fade-in duration-300">
+                <div className="relative mb-6">
+                    <div className="w-24 h-24 bg-emerald-50 rounded-2xl flex items-center justify-center border-2 border-emerald-100 shadow-xl shadow-emerald-500/10">
+                        <img src="/logo.png" alt="KasirKu Logo" className="w-16 h-16 object-contain animate-pulse" />
+                    </div>
+                </div>
+                <h1 className="text-2xl font-black text-slate-800 tracking-tight mb-2">KasirKu</h1>
+                <div className="flex items-center gap-2 text-slate-400 text-sm font-medium">
+                    <Loader2 className="w-4 h-4 animate-spin text-emerald-500" />
+                    Memuat sistem...
                 </div>
             </div>
         );
