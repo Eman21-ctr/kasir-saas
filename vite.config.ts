@@ -13,22 +13,27 @@ export default defineConfig({
         name: 'KasirKu - POS Pintar UMKM',
         short_name: 'KasirKu',
         description: 'Aplikasi Kasir POS Modern untuk UMKM',
-        theme_color: '#10b981', // Emerald-500
+        id: '/',
+        theme_color: '#10b981',
         background_color: '#ffffff',
         display: 'standalone',
         scope: '/',
         start_url: '/',
         orientation: 'portrait',
+        prefer_related_applications: false,
+        categories: ['business', 'finance', 'productivity', 'utilities'],
         icons: [
           {
             src: 'pwa-192x192.png',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
           },
           {
             src: 'pwa-512x512.png',
             sizes: '512x512',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
           },
           {
             src: 'maskable-icon-512x512.png',
