@@ -19,7 +19,7 @@ export default function ActivationPage() {
         setError(null);
 
         try {
-            // 1. Check if code exists and is not used
+            // 1. Check if code exists and is not active
             const { data, error: fetchError } = await supabase
                 .from('activation_codes')
                 .select('*')
@@ -32,6 +32,11 @@ export default function ActivationPage() {
 
             if (data.is_used) {
                 throw new Error('Kode sudah pernah digunakan.');
+            }
+
+            // CHECK STATUS
+            if (data.status !== 'active' && data.status !== null) { // Handle backward capability if null
+                throw new Error(`Kode ini sedang ${data.status === 'paused' ? 'dijeda' : 'dinonaktifkan'}. Hubungi admin.`);
             }
 
             // 2. If valid, navigate to Onboarding Profile Setup
