@@ -103,7 +103,10 @@ CREATE TABLE businesses (
     timezone VARCHAR(50) DEFAULT 'Asia/Jakarta',
 
     -- Loyalty Settings
+    is_loyalty_enabled BOOLEAN DEFAULT FALSE,
     point_value_requirement INT DEFAULT 10000,
+    loyalty_points_earned INT DEFAULT 1,
+    loyalty_point_value_idr DECIMAL(15,2) DEFAULT 0.00,
     discount_silver_percent DECIMAL(5,2) DEFAULT 5.00,
     discount_gold_percent DECIMAL(5,2) DEFAULT 10.00,
     discount_platinum_percent DECIMAL(5,2) DEFAULT 15.00,

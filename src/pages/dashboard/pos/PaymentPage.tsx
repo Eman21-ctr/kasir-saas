@@ -21,7 +21,9 @@ export default function PaymentPage() {
 
     // Dynamic Loyalty Settings
     const [loyaltyConfig, setLoyaltyConfig] = useState({
+        isLoyaltyEnabled: false,
         pointValue: 10000,
+        pointsEarned: 1,
         discSilver: 5,
         discGold: 10,
         discPlatinum: 15
@@ -41,14 +43,16 @@ export default function PaymentPage() {
             if (!user) return;
             const { data: business } = await supabase
                 .from('businesses')
-                .select('logo_url, point_value_requirement, discount_silver_percent, discount_gold_percent, discount_platinum_percent')
+                .select('logo_url, is_loyalty_enabled, point_value_requirement, loyalty_points_earned, discount_silver_percent, discount_gold_percent, discount_platinum_percent')
                 .eq('user_id', user.id)
                 .single();
 
             if (business) {
                 setLogoUrl(business.logo_url || '');
                 setLoyaltyConfig({
+                    isLoyaltyEnabled: business.is_loyalty_enabled || false,
                     pointValue: business.point_value_requirement || 10000,
+                    pointsEarned: business.loyalty_points_earned || 1,
                     discSilver: Number(business.discount_silver_percent) || 0,
                     discGold: Number(business.discount_gold_percent) || 0,
                     discPlatinum: Number(business.discount_platinum_percent) || 0,
@@ -71,7 +75,11 @@ export default function PaymentPage() {
     const discountPercent = getDiscountPercent();
     const discountAmount = totalAmount * discountPercent;
     const finalTotal = totalAmount - discountAmount;
-    const pointsEarned = Math.floor(finalTotal / (loyaltyConfig.pointValue || 10000));
+
+    // Updated Points Calculation
+    const pointsEarned = loyaltyConfig.isLoyaltyEnabled
+        ? Math.floor(finalTotal / (loyaltyConfig.pointValue || 10000)) * (loyaltyConfig.pointsEarned || 1)
+        : 0;
 
     const [cashReceived, setCashReceived] = useState<string>('');
     const [paymentMethod, setPaymentMethod] = useState<'cash' | 'qris' | 'transfer'>('cash');
