@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Loader2, Sparkles, Trophy, Info, Percent, Store } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Sparkles, Info, Store } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 
 export default function LoyaltySettingsPage() {
@@ -14,15 +14,6 @@ export default function LoyaltySettingsPage() {
     const [pointsEarned, setPointsEarned] = useState(1);
     const [pointValueIdr, setPointValueIdr] = useState(0);
     const [isLoyaltyEnabled, setIsLoyaltyEnabled] = useState(false);
-    const [discSilver, setDiscSilver] = useState(5);
-    const [discGold, setDiscGold] = useState(10);
-    const [discPlatinum, setDiscPlatinum] = useState(15);
-
-    // Auto-Tier Settings
-    const [isAutoTier, setIsAutoTier] = useState(false);
-    const [thresholdSilver, setThresholdSilver] = useState(50);
-    const [thresholdGold, setThresholdGold] = useState(200);
-    const [thresholdPlatinum, setThresholdPlatinum] = useState(500);
 
     useEffect(() => {
         fetchSettings();
@@ -36,7 +27,7 @@ export default function LoyaltySettingsPage() {
 
             const { data: business, error } = await supabase
                 .from('businesses')
-                .select('logo_url, is_loyalty_enabled, point_value_requirement, loyalty_points_earned, loyalty_point_value_idr, discount_silver_percent, discount_gold_percent, discount_platinum_percent, is_auto_tier_enabled, tier_silver_threshold, tier_gold_threshold, tier_platinum_threshold')
+                .select('logo_url, is_loyalty_enabled, point_value_requirement, loyalty_points_earned, loyalty_point_value_idr')
                 .eq('user_id', user.id)
                 .single();
 
@@ -48,14 +39,6 @@ export default function LoyaltySettingsPage() {
                 setPointReq(business.point_value_requirement || 10000);
                 setPointsEarned(business.loyalty_points_earned || 1);
                 setPointValueIdr(Number(business.loyalty_point_value_idr) || 0);
-                setDiscSilver(business.discount_silver_percent || 5);
-                setDiscGold(business.discount_gold_percent || 10);
-                setDiscPlatinum(business.discount_platinum_percent || 15);
-
-                setIsAutoTier(business.is_auto_tier_enabled || false);
-                setThresholdSilver(business.tier_silver_threshold || 50);
-                setThresholdGold(business.tier_gold_threshold || 200);
-                setThresholdPlatinum(business.tier_platinum_threshold || 500);
             }
         } catch (error) {
             console.error("Error:", error);
@@ -76,14 +59,7 @@ export default function LoyaltySettingsPage() {
                     is_loyalty_enabled: isLoyaltyEnabled,
                     point_value_requirement: pointReq,
                     loyalty_points_earned: pointsEarned,
-                    loyalty_point_value_idr: pointValueIdr,
-                    discount_silver_percent: discSilver,
-                    discount_gold_percent: discGold,
-                    discount_platinum_percent: discPlatinum,
-                    is_auto_tier_enabled: isAutoTier,
-                    tier_silver_threshold: thresholdSilver,
-                    tier_gold_threshold: thresholdGold,
-                    tier_platinum_threshold: thresholdPlatinum
+                    loyalty_point_value_idr: pointValueIdr
                 })
                 .eq('user_id', user.id);
 
@@ -218,95 +194,8 @@ export default function LoyaltySettingsPage() {
                                 </p>
                             </div>
                         </div>
-
-                        {/* Auto-Tier Toggle & Thresholds */}
-                        <div className="space-y-4 pt-2">
-                            <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-                                <div>
-                                    <h4 className="font-bold text-slate-700 text-sm">Naik Tier Otomatis</h4>
-                                    <p className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">Auto-Upgrade Member</p>
-                                </div>
-                                <button
-                                    onClick={() => setIsAutoTier(!isAutoTier)}
-                                    className={cn(
-                                        "w-12 h-6 rounded-full transition-all relative",
-                                        isAutoTier ? "bg-emerald-500" : "bg-slate-200"
-                                    )}
-                                >
-                                    <div className={cn(
-                                        "absolute top-1 w-4 h-4 bg-white rounded-full transition-all shadow-sm",
-                                        isAutoTier ? "right-1" : "left-1"
-                                    )} />
-                                </button>
-                            </div>
-
-                            {isAutoTier && (
-                                <div className="space-y-4 animate-in slide-in-from-top-4 duration-300">
-                                    <div className="flex items-center gap-2 text-slate-800">
-                                        <Trophy className="w-5 h-5 text-amber-500" />
-                                        <h3 className="font-bold text-sm">Threshold Poin Tier</h3>
-                                    </div>
-                                    <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-4">
-                                        {[
-                                            { label: 'Silver Threshold', val: thresholdSilver, set: setThresholdSilver, icon: '🥈' },
-                                            { label: 'Gold Threshold', val: thresholdGold, set: setThresholdGold, icon: '🥇' },
-                                            { label: 'Platinum Threshold', val: thresholdPlatinum, set: setThresholdPlatinum, icon: '💎' },
-                                        ].map((t, i) => (
-                                            <div key={i} className="flex items-center justify-between gap-4">
-                                                <span className="text-xs font-bold text-slate-600 flex items-center gap-2">
-                                                    <span className="text-lg">{t.icon}</span> {t.label}
-                                                </span>
-                                                <div className="flex items-center gap-2 w-24">
-                                                    <input
-                                                        type="number"
-                                                        value={t.val}
-                                                        onChange={(e) => t.set(parseInt(e.target.value))}
-                                                        className="w-full p-2 text-right rounded-lg border border-slate-200 outline-none focus:border-emerald-500 font-bold text-slate-700 text-xs"
-                                                    />
-                                                    <span className="text-[10px] font-bold text-slate-400">Poin</span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
                     </>
                 )}
-
-                {/* Discount Tier Config */}
-                <div className="space-y-4 pt-2">
-                    <div className="flex items-center gap-2 text-slate-800">
-                        <Trophy className="w-5 h-5 text-emerald-600" />
-                        <h3 className="font-bold text-sm">Persentase Diskon Member</h3>
-                    </div>
-
-                    <div className="grid gap-3">
-                        {[
-                            { label: 'Silver Member', val: discSilver, set: setDiscSilver, color: 'text-slate-400' },
-                            { label: 'Gold Member', val: discGold, set: setDiscGold, color: 'text-amber-500' },
-                            { label: 'Platinum Member', val: discPlatinum, set: setDiscPlatinum, color: 'text-emerald-600' },
-                        ].map((tier, idx) => (
-                            <div key={idx} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center bg-slate-50", tier.color)}>
-                                        <Percent className="w-5 h-5" />
-                                    </div>
-                                    <span className="font-bold text-slate-700 text-sm">{tier.label}</span>
-                                </div>
-                                <div className="flex items-center gap-2 w-24">
-                                    <input
-                                        type="number"
-                                        value={tier.val}
-                                        onChange={(e) => tier.set(parseFloat(e.target.value))}
-                                        className="w-full p-2 text-right rounded-lg border border-slate-200 outline-none focus:border-emerald-500 font-bold text-slate-700"
-                                    />
-                                    <span className="font-bold text-slate-400">%</span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
 
                 {/* Save Button */}
                 <button

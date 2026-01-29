@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { Search, ShoppingCart, Minus, Plus, X, ChevronRight, Loader2, User, Star, Crown, Filter, ChevronDown, Store } from 'lucide-react';
+import { Search, ShoppingCart, Minus, Plus, X, ChevronRight, Loader2, User, Star, Filter, ChevronDown, Store } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { useNavigate } from 'react-router-dom';
 
@@ -30,7 +30,7 @@ type Category = {
 type Member = {
     id: number;
     name: string;
-    member_level: string;
+    points: number;
     phone: string;
 };
 
@@ -88,11 +88,19 @@ export default function POSPage() {
                 // Fetch Members
                 const { data: memData } = await supabase
                     .from('members')
-                    .select('id, name, member_level, phone')
+                    .select('id, name, total_points, phone')
                     .eq('business_id', business.id)
                     .eq('is_active', true)
                     .order('name');
-                setMembers(memData || []);
+
+                // Map to alias for consistency
+                const mappedMembers = (memData || []).map(m => ({
+                    id: m.id,
+                    name: m.name,
+                    points: m.total_points || 0,
+                    phone: m.phone
+                }));
+                setMembers(mappedMembers);
 
                 // Fetch Products
                 const { data: prodData } = await supabase
@@ -369,7 +377,7 @@ export default function POSPage() {
                                 <div className="text-left">
                                     <p className="text-[9px] font-bold text-slate-400 leading-tight">Member</p>
                                     <p className={cn("font-bold text-[13px] leading-tight", selectedMember ? "text-slate-800" : "text-slate-500")}>
-                                        {selectedMember ? `${selectedMember.name}` : 'Pilih Pelanggan'}
+                                        {selectedMember ? `${selectedMember.name} (${selectedMember.points || 0} Poin)` : 'Pilih Pelanggan'}
                                     </p>
                                 </div>
                             </div>
@@ -465,11 +473,11 @@ export default function POSPage() {
                                     className="w-full text-left p-3 rounded-xl hover:bg-emerald-50 flex items-center gap-3 border border-transparent hover:border-emerald-200"
                                 >
                                     <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
-                                        {m.member_level === 'gold' ? <Crown className="w-5 h-5 text-amber-500" /> : <User className="w-5 h-5 text-emerald-600" />}
+                                        <User className="w-5 h-5 text-emerald-600" />
                                     </div>
                                     <div>
                                         <p className="font-bold text-slate-800">{m.name}</p>
-                                        <p className="text-xs text-emerald-600 font-bold uppercase">{m.member_level}</p>
+                                        <p className="text-xs text-emerald-600 font-bold uppercase">{m.points} Poin</p>
                                     </div>
                                 </button>
                             ))}

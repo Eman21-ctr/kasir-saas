@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
-import { ArrowLeft, Banknote, CreditCard, Check, Printer, Home, Loader2, Share2, ScanBarcode, User, Store } from 'lucide-react';
+import { ArrowLeft, Banknote, CreditCard, Check, Printer, Home, Loader2, Share2, ScanBarcode, User, Store, Sparkles } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 
 type CartItem = {
@@ -24,10 +24,9 @@ export default function PaymentPage() {
         isLoyaltyEnabled: false,
         pointValue: 10000,
         pointsEarned: 1,
-        discSilver: 5,
-        discGold: 10,
-        discPlatinum: 15
+        pointCashValue: 0
     });
+    const [usePoints, setUsePoints] = useState(false);
 
     useEffect(() => {
         if (!cart || cart.length === 0) {
@@ -43,7 +42,7 @@ export default function PaymentPage() {
             if (!user) return;
             const { data: business } = await supabase
                 .from('businesses')
-                .select('logo_url, is_loyalty_enabled, point_value_requirement, loyalty_points_earned, discount_silver_percent, discount_gold_percent, discount_platinum_percent')
+                .select('logo_url, is_loyalty_enabled, point_value_requirement, loyalty_points_earned, loyalty_point_value_idr')
                 .eq('user_id', user.id)
                 .single();
 
@@ -53,9 +52,7 @@ export default function PaymentPage() {
                     isLoyaltyEnabled: business.is_loyalty_enabled || false,
                     pointValue: business.point_value_requirement || 10000,
                     pointsEarned: business.loyalty_points_earned || 1,
-                    discSilver: Number(business.discount_silver_percent) || 0,
-                    discGold: Number(business.discount_gold_percent) || 0,
-                    discPlatinum: Number(business.discount_platinum_percent) || 0,
+                    pointCashValue: Number(business.loyalty_point_value_idr) || 0
                 });
             }
         } catch (e) {
@@ -63,20 +60,16 @@ export default function PaymentPage() {
         }
     };
 
-    // Calculate Discount & Points using dynamic config
-    const getDiscountPercent = () => {
-        if (!member) return 0;
-        if (member.member_level === 'platinum') return loyaltyConfig.discPlatinum / 100;
-        if (member.member_level === 'gold') return loyaltyConfig.discGold / 100;
-        if (member.member_level === 'silver') return loyaltyConfig.discSilver / 100;
-        return 0;
-    };
+    // Updated calculation: Use Points instead of Tier Discount
+    const maxRedemptionValue = (member?.points || 0) * loyaltyConfig.pointCashValue;
+    const redemptionValue = usePoints ? Math.min(maxRedemptionValue, totalAmount) : 0;
+    const finalTotal = totalAmount - redemptionValue;
 
-    const discountPercent = getDiscountPercent();
-    const discountAmount = totalAmount * discountPercent;
-    const finalTotal = totalAmount - discountAmount;
+    // Calculate how many points were actually used to get this redemption value
+    const actualPointsUsed = loyaltyConfig.pointCashValue > 0
+        ? Math.ceil(redemptionValue / loyaltyConfig.pointCashValue)
+        : 0;
 
-    // Updated Points Calculation
     const pointsEarned = loyaltyConfig.isLoyaltyEnabled
         ? Math.floor(finalTotal / (loyaltyConfig.pointValue || 10000)) * (loyaltyConfig.pointsEarned || 1)
         : 0;
@@ -122,14 +115,15 @@ export default function PaymentPage() {
                     payment_status: 'paid',
 
                     subtotal: totalAmount,
-                    discount_amount: discountAmount,
-                    discount_percentage: discountPercent * 100,
+                    discount_amount: redemptionValue,
+                    discount_percentage: totalAmount > 0 ? (redemptionValue / totalAmount) * 100 : 0,
                     total_amount: finalTotal,
 
                     cash_received: paymentMethod === 'cash' ? numericCash : finalTotal,
                     cash_change: paymentMethod === 'cash' ? change : 0,
 
                     points_earned: pointsEarned,
+                    points_used: actualPointsUsed,
                     created_by: user.id
                 })
                 .select()
@@ -138,19 +132,30 @@ export default function PaymentPage() {
             if (trxError) throw trxError;
 
             // 3. Insert Transaction Items
-            const itemsPayload = cart.map((item: CartItem) => ({
-                transaction_id: trx.id,
-                product_id: item.id,
-                product_name: item.name,
-                quantity: item.qty,
-                unit: item.unit || 'pcs',
-                purchase_price: item.purchase_price || 0,
-                selling_price: item.selling_price,
-                subtotal: item.qty * item.selling_price,
-                // Basic HPP/Profit Calc
-                hpp_total: item.qty * (item.purchase_price || 0),
-                profit: (item.selling_price - (item.purchase_price || 0)) * item.qty
-            }));
+            // 3. Insert Transaction Items with Proportional Discount
+            const itemsPayload = cart.map((item: CartItem) => {
+                const itemSubtotal = item.qty * item.selling_price;
+                const itemProportionalDiscount = totalAmount > 0
+                    ? (itemSubtotal / totalAmount) * redemptionValue
+                    : 0;
+
+                const discountedSubtotal = itemSubtotal - itemProportionalDiscount;
+                const discountedPrice = item.qty > 0 ? discountedSubtotal / item.qty : item.selling_price;
+                const hppTotal = item.qty * (item.purchase_price || 0);
+
+                return {
+                    transaction_id: trx.id,
+                    product_id: item.id,
+                    product_name: item.name,
+                    quantity: item.qty,
+                    unit: item.unit || 'pcs',
+                    purchase_price: item.purchase_price || 0,
+                    selling_price: discountedPrice,
+                    subtotal: discountedSubtotal,
+                    hpp_total: hppTotal,
+                    profit: discountedSubtotal - hppTotal
+                };
+            });
 
             const { error: itemsError } = await supabase.from('transaction_items').insert(itemsPayload);
             if (itemsError) throw itemsError;
@@ -266,18 +271,45 @@ export default function PaymentPage() {
                     </div>
                     <p className="text-emerald-100 text-[10px] font-bold uppercase tracking-widest mb-0.5 relative z-10">Total Tagihan</p>
                     <h2 className="text-2xl font-extrabold relative z-10">Rp {finalTotal.toLocaleString('id-ID')}</h2>
-                    {discountAmount > 0 && (
+                    {redemptionValue > 0 && (
                         <div className="mt-2 bg-white/20 rounded-lg p-1.5 text-[10px] font-medium flex justify-between items-center relative z-10">
                             <span>Subtotal: Rp {totalAmount.toLocaleString('id-ID')}</span>
-                            <span className="bg-white text-emerald-600 px-1 py-0.5 rounded font-bold">Hemat {discountAmount.toLocaleString('id-ID')}</span>
+                            <span className="bg-white text-emerald-600 px-1 py-0.5 rounded font-bold">Potong Poin -{redemptionValue.toLocaleString('id-ID')}</span>
                         </div>
                     )}
                     {member && (
                         <div className="mt-1.5 text-[9px] text-emerald-100 font-medium flex items-center justify-center gap-1 relative z-10">
-                            <User className="w-2.5 h-2.5" /> Member: {member.name} ({member.member_level})
+                            <User className="w-2.5 h-2.5" /> Pelanggan: {member.name} ({member.points || 0} Poin)
                         </div>
                     )}
                 </div>
+
+                {/* Point Redemption Toggle */}
+                {member && member.points > 0 && loyaltyConfig.pointCashValue > 0 && (
+                    <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-amber-50 rounded-lg flex items-center justify-center">
+                                <Sparkles className="w-4 h-4 text-amber-500" />
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-slate-700 text-xs">Gunakan {member.points} Poin?</h4>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase">Senilai Rp {maxRedemptionValue.toLocaleString('id-ID')}</p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => setUsePoints(!usePoints)}
+                            className={cn(
+                                "w-10 h-5 rounded-full transition-all relative",
+                                usePoints ? "bg-emerald-500" : "bg-slate-200"
+                            )}
+                        >
+                            <div className={cn(
+                                "absolute top-1 w-3 h-3 bg-white rounded-full transition-all shadow-sm",
+                                usePoints ? "right-1" : "left-1"
+                            )} />
+                        </button>
+                    </div>
+                )}
 
                 {/* Methods */}
                 <div>
