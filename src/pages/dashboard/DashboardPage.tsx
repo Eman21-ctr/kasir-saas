@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import {
-    ShoppingCart, Package, Users, BarChart3, Plus, History,
+    ShoppingCart, Package, Users, BarChart3, History,
     AlertTriangle, ChevronRight, TrendingUp, Receipt, Wallet
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -154,10 +154,11 @@ export default function DashboardPage() {
 
                     <div className="grid grid-cols-2 gap-3">
                         <MenuCard
-                            icon={Plus}
-                            label="Tambah Produk"
-                            sub="Daftarkan barang baru"
-                            onClick={() => navigate('/dashboard/products/new')}
+                            icon={Package}
+                            label="Stok"
+                            sub="Kelola & restock barang"
+                            onClick={() => navigate('/dashboard/products/stock')}
+                            accent
                         />
                         <MenuCard
                             icon={History}

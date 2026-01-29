@@ -135,7 +135,7 @@ export default function StockAlertsPage() {
                                             </p>
                                         </div>
                                         <button
-                                            onClick={() => navigate(`/dashboard/products/${p.id}/add-stock`)}
+                                            onClick={() => navigate(`/dashboard/products/stock?search=${p.name}`)}
                                             className="p-3 bg-red-500 text-white rounded-xl shadow-md active:scale-90 transition-all"
                                         >
                                             <Plus className="w-4 h-4" />
@@ -170,7 +170,7 @@ export default function StockAlertsPage() {
                                             <p className="text-[10px] text-amber-600 font-bold uppercase tracking-tight">Sisa {p.stock_quantity} {p.unit}</p>
                                         </div>
                                         <button
-                                            onClick={() => navigate(`/dashboard/products/${p.id}/add-stock`)}
+                                            onClick={() => navigate(`/dashboard/products/stock?search=${p.name}`)}
                                             className="p-3 bg-amber-500 text-white rounded-xl shadow-md active:scale-90 transition-all"
                                         >
                                             <Plus className="w-4 h-4" />

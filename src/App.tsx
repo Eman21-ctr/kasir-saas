@@ -9,7 +9,7 @@ import ProductListPage from './pages/dashboard/products/ProductListPage';
 import AddProductPage from './pages/dashboard/products/AddProductPage';
 import EditProductPage from './pages/dashboard/products/EditProductPage';
 import CategoriesPage from './pages/dashboard/products/CategoriesPage';
-import AddStockPage from './pages/dashboard/products/AddStockPage';
+import StockManagementPage from './pages/dashboard/products/StockManagementPage';
 import StockAlertsPage from './pages/dashboard/products/StockAlertsPage';
 import POSPage from './pages/dashboard/pos/POSPage';
 import PaymentPage from './pages/dashboard/pos/PaymentPage';
@@ -49,8 +49,8 @@ function App() {
           {/* Products & Stock */}
           <Route path="products" element={<ProductListPage />} />
           <Route path="products/new" element={<AddProductPage />} />
+          <Route path="products/stock" element={<StockManagementPage />} />
           <Route path="products/:id" element={<EditProductPage />} />
-          <Route path="products/:productId/add-stock" element={<AddStockPage />} />
           <Route path="products/categories" element={<CategoriesPage />} />
           <Route path="products/alerts" element={<StockAlertsPage />} />
 
