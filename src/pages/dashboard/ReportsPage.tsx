@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Calendar, TrendingUp, TrendingDown, ShoppingCart, Apple as PiggyBank, ChevronDown, Share2, Download, Loader2, Package, Users, Wallet, Eye, Trash2 } from 'lucide-react';
+import { Calendar, TrendingUp, TrendingDown, ShoppingCart, Apple as PiggyBank, ChevronDown, Share2, Download, Loader2, Package, Users, Wallet, Eye, Trash2, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import * as XLSX from 'xlsx';
 
@@ -35,6 +35,12 @@ export default function ReportsPage() {
     // Expenses
     const [totalExpenses, setTotalExpenses] = useState(0);
     const [logoUrl, setLogoUrl] = useState('');
+
+    // Modal state
+    const [selectedItem, setSelectedItem] = useState<any>(null);
+    const [detailType, setDetailType] = useState<ReportType | null>(null);
+    const [trxItems, setTrxItems] = useState<any[]>([]);
+    const [loadingDetail, setLoadingDetail] = useState(false);
 
     useEffect(() => {
         fetchReports();
@@ -204,13 +210,76 @@ export default function ReportsPage() {
                 .eq('id', id);
 
             if (error) throw error;
-
             await fetchReports();
-            alert("Transaksi berhasil dihapus dan data telah dikembalikan.");
+            alert("Transaksi berhasil dihapus.");
         } catch (error: any) {
             alert("Gagal menghapus: " + error.message);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDeleteProduct = async (id: number) => {
+        if (!window.confirm("Hapus produk ini? Perhatian: Menghapus produk juga akan menghapus riwayat transaksi produk ini.")) return;
+        try {
+            setLoading(true);
+            const { error } = await supabase.from('products').delete().eq('id', id);
+            if (error) throw error;
+            await fetchReports();
+            alert("Produk berhasil dihapus.");
+        } catch (error: any) {
+            alert("Gagal menghapus: " + error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDeleteMember = async (id: number) => {
+        if (!window.confirm("Hapus member ini? Riwayat transaksi member akan tetap ada.")) return;
+        try {
+            setLoading(true);
+            const { error } = await supabase.from('members').delete().eq('id', id);
+            if (error) throw error;
+            await fetchReports();
+            alert("Member berhasil dihapus.");
+        } catch (error: any) {
+            alert("Gagal menghapus: " + error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDeleteExpense = async (id: number) => {
+        if (!window.confirm("Hapus pengeluaran ini?")) return;
+        try {
+            setLoading(true);
+            const { error } = await supabase.from('expenses').delete().eq('id', id);
+            if (error) throw error;
+            await fetchReports();
+            alert("Pengeluaran berhasil dihapus.");
+        } catch (error: any) {
+            alert("Gagal menghapus: " + error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const openDetail = async (item: any, type: ReportType) => {
+        setSelectedItem(item);
+        setDetailType(type);
+        if (type === 'sales') {
+            try {
+                setLoadingDetail(true);
+                const { data } = await supabase
+                    .from('transaction_items')
+                    .select('*')
+                    .eq('transaction_id', item.id);
+                setTrxItems(data || []);
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setLoadingDetail(false);
+            }
         }
     };
 
@@ -553,26 +622,29 @@ export default function ReportsPage() {
                                 )}
                                 {reportType === 'stock' && (
                                     <tr>
-                                        <th className="px-4 py-3">Produk</th>
-                                        <th className="px-4 py-3">Kategori</th>
-                                        <th className="px-4 py-3 text-right">Stok</th>
-                                        <th className="px-4 py-3 text-right">Modal</th>
+                                        <th className="px-2 py-3 text-[9px]">Produk</th>
+                                        <th className="px-2 py-3 text-[9px]">Kategori</th>
+                                        <th className="px-2 py-3 text-[9px] text-right">Stok</th>
+                                        <th className="px-2 py-3 text-[9px] text-right">Modal</th>
+                                        <th className="px-2 py-3 text-[9px] text-center">Aksi</th>
                                     </tr>
                                 )}
                                 {reportType === 'member' && (
                                     <tr>
-                                        <th className="px-4 py-3">Nama</th>
-                                        <th className="px-4 py-3">Level</th>
-                                        <th className="px-4 py-3 text-right">Poin</th>
-                                        <th className="px-4 py-3 text-right">Total Belanja</th>
+                                        <th className="px-2 py-3 text-[9px]">Nama</th>
+                                        <th className="px-2 py-3 text-[9px]">Level</th>
+                                        <th className="px-2 py-3 text-[9px] text-right">Poin</th>
+                                        <th className="px-2 py-3 text-[9px] text-right">Total</th>
+                                        <th className="px-2 py-3 text-[9px] text-center">Aksi</th>
                                     </tr>
                                 )}
                                 {reportType === 'expense' && (
                                     <tr>
-                                        <th className="px-4 py-3">Tanggal</th>
-                                        <th className="px-4 py-3">Kategori</th>
-                                        <th className="px-4 py-3">Nama</th>
-                                        <th className="px-4 py-3 text-right">Jumlah</th>
+                                        <th className="px-2 py-3 text-[9px]">Tgl</th>
+                                        <th className="px-2 py-3 text-[9px]">Kategori</th>
+                                        <th className="px-2 py-3 text-[9px]">Nama</th>
+                                        <th className="px-2 py-3 text-[9px] text-right">Jumlah</th>
+                                        <th className="px-2 py-3 text-[9px] text-center">Aksi</th>
                                     </tr>
                                 )}
                             </thead>
@@ -593,7 +665,10 @@ export default function ReportsPage() {
                                         </td>
                                         <td className="px-2 py-2.5">
                                             <div className="flex items-center justify-center gap-1.5">
-                                                <button className="p-1.5 hover:bg-emerald-50 rounded-lg text-emerald-600 transition-colors">
+                                                <button
+                                                    onClick={() => openDetail(t, 'sales')}
+                                                    className="p-1.5 hover:bg-emerald-50 rounded-lg text-emerald-600 transition-colors"
+                                                >
                                                     <Eye className="w-3.5 h-3.5" />
                                                 </button>
                                                 <button
@@ -607,29 +682,50 @@ export default function ReportsPage() {
                                     </tr>
                                 )) : null}
                                 {reportType === 'stock' && products.length > 0 ? products.map((p) => (
-                                    <tr key={p.id} className="hover:bg-slate-50">
-                                        <td className="px-4 py-3">
-                                            <p className="font-bold">{p.name}</p>
-                                            <p className="text-[10px] text-slate-400">{p.sku || '-'}</p>
+                                    <tr key={p.id} className="hover:bg-slate-50 border-b border-slate-50 last:border-0">
+                                        <td className="px-2 py-2.5">
+                                            <p className="font-bold text-[11px] text-slate-700 truncate max-w-[80px] leading-tight">{p.name}</p>
+                                            <p className="text-[9px] text-slate-400 font-medium">{p.sku || '-'}</p>
                                         </td>
-                                        <td className="px-4 py-3">{p.categories?.name || '-'}</td>
-                                        <td className={cn("px-4 py-3 text-right font-bold", p.stock_quantity <= p.min_stock ? "text-red-500" : "text-emerald-500")}>
-                                            {p.stock_quantity} {p.unit}
+                                        <td className="px-2 py-2.5 text-[10px] font-medium text-slate-500 truncate max-w-[60px]">
+                                            {p.categories?.name || '-'}
                                         </td>
-                                        <td className="px-4 py-3 text-right text-slate-500">
-                                            Rp {p.purchase_price?.toLocaleString()}
+                                        <td className={cn(
+                                            "px-2 py-2.5 text-right font-black text-[11px]",
+                                            (p.stock_quantity || 0) <= (p.min_stock || 0) ? "text-red-500" : "text-emerald-600"
+                                        )}>
+                                            {p.stock_quantity}
+                                        </td>
+                                        <td className="px-2 py-2.5 text-right text-[10px] font-bold text-slate-400">
+                                            {p.purchase_price?.toLocaleString()}
+                                        </td>
+                                        <td className="px-2 py-2.5">
+                                            <div className="flex items-center justify-center gap-1.5">
+                                                <button
+                                                    onClick={() => openDetail(p, 'stock')}
+                                                    className="p-1.5 hover:bg-emerald-50 rounded-lg text-emerald-600 transition-colors"
+                                                >
+                                                    <Eye className="w-3.5 h-3.5" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteProduct(p.id)}
+                                                    className="p-1.5 hover:bg-red-50 rounded-lg text-red-500 transition-colors"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 )) : null}
                                 {reportType === 'member' && members.length > 0 ? members.map((m) => (
-                                    <tr key={m.id} className="hover:bg-slate-50">
-                                        <td className="px-4 py-3">
-                                            <p className="font-bold">{m.name}</p>
-                                            <p className="text-[10px] text-slate-400">{m.phone}</p>
+                                    <tr key={m.id} className="hover:bg-slate-50 border-b border-slate-50 last:border-0">
+                                        <td className="px-2 py-2.5">
+                                            <p className="font-bold text-[11px] text-slate-700 truncate max-w-[80px] leading-tight">{m.name}</p>
+                                            <p className="text-[9px] text-slate-400 font-medium">{m.phone}</p>
                                         </td>
-                                        <td className="px-4 py-3">
+                                        <td className="px-2 py-2.5">
                                             <span className={cn(
-                                                "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase",
+                                                "px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter",
                                                 m.member_level === 'platinum' ? "bg-purple-100 text-purple-700" :
                                                     m.member_level === 'gold' ? "bg-amber-100 text-amber-700" :
                                                         m.member_level === 'silver' ? "bg-slate-100 text-slate-700" : "bg-emerald-100 text-emerald-700"
@@ -637,16 +733,58 @@ export default function ReportsPage() {
                                                 {m.member_level}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-3 text-right">{m.total_points}</td>
-                                        <td className="px-4 py-3 text-right font-bold">Rp {m.total_spending?.toLocaleString()}</td>
+                                        <td className="px-2 py-2.5 text-right font-bold text-[11px] text-slate-600">{m.total_points}</td>
+                                        <td className="px-2 py-2.5 text-right font-black text-slate-900 text-[11px]">
+                                            {m.total_spending?.toLocaleString()}
+                                        </td>
+                                        <td className="px-2 py-2.5">
+                                            <div className="flex items-center justify-center gap-1.5">
+                                                <button
+                                                    onClick={() => openDetail(m, 'member')}
+                                                    className="p-1.5 hover:bg-emerald-50 rounded-lg text-emerald-600 transition-colors"
+                                                >
+                                                    <Eye className="w-3.5 h-3.5" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteMember(m.id)}
+                                                    className="p-1.5 hover:bg-red-50 rounded-lg text-red-500 transition-colors"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
+                                        </td>
                                     </tr>
                                 )) : null}
                                 {reportType === 'expense' && expensesList.length > 0 ? expensesList.map((e) => (
-                                    <tr key={e.id} className="hover:bg-slate-50">
-                                        <td className="px-4 py-3 whitespace-nowrap">{new Date(e.expense_date).toLocaleDateString('id-ID')}</td>
-                                        <td className="px-4 py-3">{e.expense_categories?.name || '-'}</td>
-                                        <td className="px-4 py-3 font-medium">{e.name}</td>
-                                        <td className="px-4 py-3 text-right font-bold text-red-500">Rp {e.amount?.toLocaleString()}</td>
+                                    <tr key={e.id} className="hover:bg-slate-50 border-b border-slate-50 last:border-0">
+                                        <td className="px-2 py-2.5 whitespace-nowrap text-[10px] font-bold text-slate-400">
+                                            {new Date(e.expense_date).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' })}
+                                        </td>
+                                        <td className="px-2 py-2.5 text-[10px] font-medium text-slate-500 truncate max-w-[50px]">
+                                            {e.expense_categories?.name || '-'}
+                                        </td>
+                                        <td className="px-2 py-2.5 font-bold text-[11px] text-slate-700 truncate max-w-[60px] leading-tight">
+                                            {e.name}
+                                        </td>
+                                        <td className="px-2 py-2.5 text-right font-black text-red-600 text-[11px]">
+                                            {e.amount?.toLocaleString()}
+                                        </td>
+                                        <td className="px-2 py-2.5">
+                                            <div className="flex items-center justify-center gap-1.5">
+                                                <button
+                                                    onClick={() => openDetail(e, 'expense')}
+                                                    className="p-1.5 hover:bg-emerald-50 rounded-lg text-emerald-600 transition-colors"
+                                                >
+                                                    <Eye className="w-3.5 h-3.5" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteExpense(e.id)}
+                                                    className="p-1.5 hover:bg-red-50 rounded-lg text-red-500 transition-colors"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
+                                        </td>
                                     </tr>
                                 )) : null}
                             </tbody>
@@ -678,6 +816,167 @@ export default function ReportsPage() {
                     </button>
                 </div>
 
+                {/* Detail Modal */}
+                {selectedItem && (
+                    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-300">
+                            {/* Modal Header */}
+                            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+                                <div>
+                                    <h3 className="text-lg font-black text-slate-900 leading-tight">Detail {detailType === 'sales' ? 'Transaksi' : detailType === 'stock' ? 'Produk' : detailType === 'member' ? 'Member' : 'Pengeluaran'}</h3>
+                                    <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mt-0.5">Informasi Lengkap</p>
+                                </div>
+                                <button
+                                    onClick={() => { setSelectedItem(null); setDetailType(null); }}
+                                    className="p-2 bg-slate-50 hover:bg-slate-100 rounded-full text-slate-400 transition-colors"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            {/* Modal Body */}
+                            <div className="p-6 max-h-[70vh] overflow-y-auto space-y-6">
+                                {detailType === 'sales' && (
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="p-3 bg-slate-50 rounded-xl">
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase">No. Transaksi</p>
+                                                <p className="text-sm font-black text-slate-700">{selectedItem.transaction_number}</p>
+                                            </div>
+                                            <div className="p-3 bg-slate-50 rounded-xl">
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase">Waktu</p>
+                                                <p className="text-sm font-bold text-slate-700">{new Date(selectedItem.created_at).toLocaleString('id-ID')}</p>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase mb-3">Item Terjual</p>
+                                            {loadingDetail ? (
+                                                <div className="py-8 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-emerald-500" /></div>
+                                            ) : (
+                                                <div className="space-y-2">
+                                                    {trxItems.map((item, idx) => (
+                                                        <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100/50">
+                                                            <div className="flex-1">
+                                                                <p className="text-xs font-black text-slate-700">{item.product_name}</p>
+                                                                <p className="text-[10px] text-slate-400 font-bold">{item.quantity} {item.unit} x {item.selling_price?.toLocaleString()}</p>
+                                                            </div>
+                                                            <p className="text-xs font-black text-emerald-600">Rp {item.subtotal?.toLocaleString()}</p>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="pt-4 border-t border-dashed border-slate-200 flex items-center justify-between">
+                                            <span className="text-sm font-black text-slate-900">Total Transaksi</span>
+                                            <span className="text-xl font-black text-emerald-600">Rp {selectedItem.total_amount?.toLocaleString()}</span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {detailType === 'stock' && (
+                                    <div className="space-y-4">
+                                        <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-center justify-between">
+                                            <div>
+                                                <p className="text-[10px] font-bold text-emerald-600 uppercase">Stok Tersedia</p>
+                                                <p className="text-3xl font-black text-emerald-700">{selectedItem.stock_quantity} <span className="text-sm text-emerald-500">{selectedItem.unit}</span></p>
+                                            </div>
+                                            <Package className="w-10 h-10 text-emerald-200" />
+                                        </div>
+
+                                        <div className="grid grid-cols-1 gap-3">
+                                            {[
+                                                { label: 'Nama Produk', value: selectedItem.name },
+                                                { label: 'SKU / Barcode', value: selectedItem.sku || '-' },
+                                                { label: 'Kategori', value: selectedItem.categories?.name || '-' },
+                                                { label: 'Harga Beli (Modal)', value: `Rp ${selectedItem.purchase_price?.toLocaleString()}` },
+                                                { label: 'Harga Jual', value: `Rp ${selectedItem.selling_price?.toLocaleString()}` },
+                                                { label: 'Min. Stok Alert', value: `${selectedItem.min_stock} ${selectedItem.unit}` },
+                                            ].map((info, i) => (
+                                                <div key={i} className="flex items-center justify-between py-2 border-b border-slate-50">
+                                                    <span className="text-xs font-medium text-slate-500">{info.label}</span>
+                                                    <span className="text-xs font-black text-slate-800">{info.value}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {detailType === 'member' && (
+                                    <div className="space-y-4">
+                                        <div className="p-5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl text-white shadow-lg">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <Users className="w-8 h-8 text-white/30" />
+                                                <span className="px-2 py-1 bg-white/20 rounded-lg text-[10px] font-black uppercase">{selectedItem.member_level}</span>
+                                            </div>
+                                            <p className="text-xs text-indigo-100 font-bold uppercase tracking-widest">Total Poin</p>
+                                            <h4 className="text-3xl font-black">{selectedItem.total_points}</h4>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase">Total Transaksi</p>
+                                                <p className="text-sm font-black text-slate-700">{selectedItem.total_transactions} Kali</p>
+                                            </div>
+                                            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase">Total Belanja</p>
+                                                <p className="text-sm font-black text-slate-700">Rp {selectedItem.total_spending?.toLocaleString()}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            {[
+                                                { label: 'Nama Member', value: selectedItem.name },
+                                                { label: 'No. Telepon', value: selectedItem.phone },
+                                                { label: 'Tanggal Gabung', value: new Date(selectedItem.join_date).toLocaleDateString('id-ID') },
+                                                { label: 'Status', value: selectedItem.is_active ? 'Aktif' : 'Non-Aktif' },
+                                            ].map((info, i) => (
+                                                <div key={i} className="flex items-center justify-between py-2 border-b border-slate-50">
+                                                    <span className="text-xs font-medium text-slate-500">{info.label}</span>
+                                                    <span className="text-xs font-black text-slate-800">{info.value}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {detailType === 'expense' && (
+                                    <div className="space-y-4">
+                                        <div className="p-4 bg-red-50 rounded-2xl border border-red-100">
+                                            <p className="text-[10px] font-bold text-red-500 uppercase">Jumlah Pengeluaran</p>
+                                            <p className="text-2xl font-black text-red-600">Rp {selectedItem.amount?.toLocaleString()}</p>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            {[
+                                                { label: 'Nama Pengeluaran', value: selectedItem.name },
+                                                { label: 'Kategori', value: selectedItem.expense_categories?.name || 'Umum' },
+                                                { label: 'Tanggal', value: new Date(selectedItem.expense_date).toLocaleDateString('id-ID') },
+                                                { label: 'Catatan', value: selectedItem.notes || '-' },
+                                            ].map((info, i) => (
+                                                <div key={i} className="flex flex-col gap-1 py-1">
+                                                    <span className="text-[10px] font-bold text-slate-400 uppercase">{info.label}</span>
+                                                    <span className="text-sm font-bold text-slate-700">{info.value}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Modal Footer */}
+                            <div className="p-4 bg-slate-50 flex gap-3">
+                                <button
+                                    onClick={() => { setSelectedItem(null); setDetailType(null); }}
+                                    className="flex-1 bg-white border border-slate-200 py-3 rounded-xl font-bold text-slate-600 text-sm active:scale-95 transition-all shadow-sm"
+                                >
+                                    Tutup
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
