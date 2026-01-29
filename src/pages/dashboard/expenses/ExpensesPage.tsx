@@ -15,7 +15,7 @@ type Expense = {
 const EXPENSE_CATEGORIES = [
     { id: 'rent', name: 'Sewa Tempat', icon: '🏠' },
     { id: 'electricity', name: 'Listrik', icon: '⚡' },
-    { id: 'water', name: 'Air PDAM', icon: '💧' },
+    { id: 'water', name: 'Air', icon: '💧' },
     { id: 'salary', name: 'Gaji Karyawan', icon: '👤' },
     { id: 'transport', name: 'Transportasi', icon: '🚗' },
     { id: 'supplies', name: 'Perlengkapan', icon: '📦' },
@@ -191,8 +191,8 @@ export default function ExpensesPage() {
 
             {/* Modal */}
             {showModal && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-6">
-                    <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+                <div className="fixed inset-0 bg-black/60 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 pb-24 sm:pb-4 animate-in fade-in duration-200 overflow-hidden">
+                    <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-sm p-6 shadow-2xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300">
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="font-bold text-lg">Catat Pengeluaran</h2>
                             <button onClick={() => setShowModal(false)} className="p-2 hover:bg-slate-100 rounded-full">
@@ -203,21 +203,28 @@ export default function ExpensesPage() {
                         <div className="space-y-4">
                             {/* Category Selection */}
                             <div>
-                                <label className="text-sm font-bold text-slate-700">Kategori *</label>
-                                <div className="grid grid-cols-4 gap-2 mt-2">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Pilih Kategori *</label>
+                                <div className="grid grid-cols-2 gap-2 mt-2">
                                     {EXPENSE_CATEGORIES.map((cat) => (
                                         <button
                                             key={cat.id}
                                             onClick={() => setFormCategory(cat.id)}
                                             className={cn(
-                                                "p-3 rounded-xl border-2 text-center transition-all",
+                                                "p-2 rounded-xl border flex items-center gap-2 transition-all text-left",
                                                 formCategory === cat.id
-                                                    ? "border-red-500 bg-red-50"
-                                                    : "border-slate-100 hover:border-slate-300"
+                                                    ? "border-red-500 bg-red-50 text-red-700 shadow-sm"
+                                                    : "border-slate-100 bg-slate-50/50 hover:bg-slate-100 text-slate-500"
                                             )}
                                         >
-                                            <span className="text-2xl">{cat.icon}</span>
-                                            <p className="text-[10px] font-bold text-slate-600 mt-1 truncate">{cat.name}</p>
+                                            <div className={cn(
+                                                "w-7 h-7 rounded-lg flex items-center justify-center text-sm shrink-0",
+                                                formCategory === cat.id ? "bg-white shadow-sm" : "bg-white shadow-xs"
+                                            )}>
+                                                {cat.icon}
+                                            </div>
+                                            <p className="text-[9px] font-black leading-tight uppercase tracking-widest">
+                                                {cat.name}
+                                            </p>
                                         </button>
                                     ))}
                                 </div>
