@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Calendar, TrendingUp, TrendingDown, ShoppingCart, Apple as PiggyBank, ChevronDown, Share2, Download, Loader2, Package, Users, Wallet } from 'lucide-react';
+import { Calendar, TrendingUp, TrendingDown, ShoppingCart, Apple as PiggyBank, ChevronDown, Share2, Download, Loader2, Package, Users, Wallet, Eye, Trash2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import * as XLSX from 'xlsx';
 
@@ -193,6 +193,27 @@ export default function ReportsPage() {
         }
     };
 
+    const handleDeleteTransaction = async (id: number) => {
+        if (!window.confirm("Hapus transaksi ini? Stok barang akan dikembalikan dan poin member akan dikurangi otomatis.")) return;
+
+        try {
+            setLoading(true);
+            const { error } = await supabase
+                .from('transactions')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+
+            await fetchReports();
+            alert("Transaksi berhasil dihapus dan data telah dikembalikan.");
+        } catch (error: any) {
+            alert("Gagal menghapus: " + error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const periodLabel = () => {
         switch (period) {
             case 'today': return 'Hari Ini';
@@ -280,7 +301,13 @@ export default function ReportsPage() {
                         <ShoppingCart className="w-5 h-5 text-emerald-600" />
                     )}
                 </div>
-                <button className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                <button
+                    onClick={() => {
+                        const text = `Laporan ${reportLabel()} - ${periodLabel()}\nTotal: Rp ${totalSales.toLocaleString()}`;
+                        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
+                    }}
+                    className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                >
                     <Share2 className="w-5 h-5 text-slate-500" />
                 </button>
             </div>
@@ -373,131 +400,7 @@ export default function ReportsPage() {
                     </div>
                 )}
 
-                {/* Daily Chart (Only for Sales) */}
-                {reportType === 'sales' && dailyData.length > 0 && (
-                    <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
-                        <h3 className="font-bold text-slate-700 mb-4">Grafik Penjualan</h3>
-                        <div className="flex items-end gap-2 h-32">
-                            {dailyData.slice(-7).map((d, i) => (
-                                <div key={i} className="flex-1 flex flex-col items-center">
-                                    <div
-                                        className="w-full bg-emerald-500 rounded-t-lg transition-all"
-                                        style={{ height: `${(d.amount / maxDaily) * 100}%`, minHeight: '4px' }}
-                                    />
-                                    <span className="text-[10px] text-slate-400 mt-2 font-bold">{d.date}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* Main Content (Table) */}
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                    <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                        <h3 className="font-bold text-slate-700">Detail {reportLabel()}</h3>
-                    </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-left">
-                            <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
-                                {reportType === 'sales' && (
-                                    <tr>
-                                        <th className="px-4 py-3">Waktu</th>
-                                        <th className="px-4 py-3">No. Transaksi</th>
-                                        <th className="px-4 py-3">Member</th>
-                                        <th className="px-4 py-3 text-right">Total</th>
-                                    </tr>
-                                )}
-                                {reportType === 'stock' && (
-                                    <tr>
-                                        <th className="px-4 py-3">Produk</th>
-                                        <th className="px-4 py-3">Kategori</th>
-                                        <th className="px-4 py-3 text-right">Stok</th>
-                                        <th className="px-4 py-3 text-right">Modal</th>
-                                    </tr>
-                                )}
-                                {reportType === 'member' && (
-                                    <tr>
-                                        <th className="px-4 py-3">Nama</th>
-                                        <th className="px-4 py-3">Level</th>
-                                        <th className="px-4 py-3 text-right">Poin</th>
-                                        <th className="px-4 py-3 text-right">Total Belanja</th>
-                                    </tr>
-                                )}
-                                {reportType === 'expense' && (
-                                    <tr>
-                                        <th className="px-4 py-3">Tanggal</th>
-                                        <th className="px-4 py-3">Kategori</th>
-                                        <th className="px-4 py-3">Nama</th>
-                                        <th className="px-4 py-3 text-right">Jumlah</th>
-                                    </tr>
-                                )}
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {reportType === 'sales' && transactions.length > 0 ? transactions.map((t) => (
-                                    <tr key={t.id} className="hover:bg-slate-50">
-                                        <td className="px-4 py-3 whitespace-nowrap">{new Date(t.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</td>
-                                        <td className="px-4 py-3 font-medium uppercase">{t.transaction_number}</td>
-                                        <td className="px-4 py-3">{t.members?.name || '-'}</td>
-                                        <td className="px-4 py-3 text-right font-bold">Rp {t.total_amount?.toLocaleString()}</td>
-                                    </tr>
-                                )) : null}
-                                {reportType === 'stock' && products.length > 0 ? products.map((p) => (
-                                    <tr key={p.id} className="hover:bg-slate-50">
-                                        <td className="px-4 py-3">
-                                            <p className="font-bold">{p.name}</p>
-                                            <p className="text-[10px] text-slate-400">{p.sku || '-'}</p>
-                                        </td>
-                                        <td className="px-4 py-3">{p.categories?.name || '-'}</td>
-                                        <td className={cn("px-4 py-3 text-right font-bold", p.stock_quantity <= p.min_stock ? "text-red-500" : "text-emerald-500")}>
-                                            {p.stock_quantity} {p.unit}
-                                        </td>
-                                        <td className="px-4 py-3 text-right text-slate-500">
-                                            Rp {p.purchase_price?.toLocaleString()}
-                                        </td>
-                                    </tr>
-                                )) : null}
-                                {reportType === 'member' && members.length > 0 ? members.map((m) => (
-                                    <tr key={m.id} className="hover:bg-slate-50">
-                                        <td className="px-4 py-3">
-                                            <p className="font-bold">{m.name}</p>
-                                            <p className="text-[10px] text-slate-400">{m.phone}</p>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <span className={cn(
-                                                "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase",
-                                                m.member_level === 'platinum' ? "bg-purple-100 text-purple-700" :
-                                                    m.member_level === 'gold' ? "bg-amber-100 text-amber-700" :
-                                                        m.member_level === 'silver' ? "bg-slate-100 text-slate-700" : "bg-emerald-100 text-emerald-700"
-                                            )}>
-                                                {m.member_level}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-3 text-right">{m.total_points}</td>
-                                        <td className="px-4 py-3 text-right font-bold">Rp {m.total_spending?.toLocaleString()}</td>
-                                    </tr>
-                                )) : null}
-                                {reportType === 'expense' && expensesList.length > 0 ? expensesList.map((e) => (
-                                    <tr key={e.id} className="hover:bg-slate-50">
-                                        <td className="px-4 py-3 whitespace-nowrap">{new Date(e.expense_date).toLocaleDateString('id-ID')}</td>
-                                        <td className="px-4 py-3">{e.expense_categories?.name || '-'}</td>
-                                        <td className="px-4 py-3 font-medium">{e.name}</td>
-                                        <td className="px-4 py-3 text-right font-bold text-red-500">Rp {e.amount?.toLocaleString()}</td>
-                                    </tr>
-                                )) : null}
-                            </tbody>
-                        </table>
-                        {((reportType === 'sales' && !transactions.length) ||
-                            (reportType === 'stock' && !products.length) ||
-                            (reportType === 'member' && !members.length) ||
-                            (reportType === 'expense' && !expensesList.length)) && (
-                                <div className="p-8 text-center text-slate-400 font-medium">
-                                    Tidak ada data untuk periode ini
-                                </div>
-                            )}
-                    </div>
-                </div>
-
-                {/* KPI Cards section (Below Table as requested) */}
+                {/* KPI Cards Moved Up */}
                 <div className="space-y-4">
                     {reportType === 'sales' && (
                         <>
@@ -613,6 +516,153 @@ export default function ReportsPage() {
                     )}
                 </div>
 
+                {/* Daily Chart Moved Down */}
+                {reportType === 'sales' && dailyData.length > 0 && (
+                    <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
+                        <h3 className="font-bold text-slate-700 mb-4">Grafik Penjualan</h3>
+                        <div className="flex items-end gap-2 h-32">
+                            {dailyData.slice(-7).map((d, i) => (
+                                <div key={i} className="flex-1 flex flex-col items-center">
+                                    <div
+                                        className="w-full bg-emerald-500 rounded-t-lg transition-all"
+                                        style={{ height: `${(d.amount / maxDaily) * 100}%`, minHeight: '4px' }}
+                                    />
+                                    <span className="text-[10px] text-slate-400 mt-2 font-bold">{d.date}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Main Content (Table) */}
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                        <h3 className="font-bold text-slate-700">Detail {reportLabel()}</h3>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+                                {reportType === 'sales' && (
+                                    <tr>
+                                        <th className="px-2 py-3 text-[9px]">Jam</th>
+                                        <th className="px-2 py-3 text-[9px]">No Trx</th>
+                                        <th className="px-2 py-3 text-[9px]">Member</th>
+                                        <th className="px-2 py-3 text-[9px] text-right">Total</th>
+                                        <th className="px-2 py-3 text-[9px] text-center">Aksi</th>
+                                    </tr>
+                                )}
+                                {reportType === 'stock' && (
+                                    <tr>
+                                        <th className="px-4 py-3">Produk</th>
+                                        <th className="px-4 py-3">Kategori</th>
+                                        <th className="px-4 py-3 text-right">Stok</th>
+                                        <th className="px-4 py-3 text-right">Modal</th>
+                                    </tr>
+                                )}
+                                {reportType === 'member' && (
+                                    <tr>
+                                        <th className="px-4 py-3">Nama</th>
+                                        <th className="px-4 py-3">Level</th>
+                                        <th className="px-4 py-3 text-right">Poin</th>
+                                        <th className="px-4 py-3 text-right">Total Belanja</th>
+                                    </tr>
+                                )}
+                                {reportType === 'expense' && (
+                                    <tr>
+                                        <th className="px-4 py-3">Tanggal</th>
+                                        <th className="px-4 py-3">Kategori</th>
+                                        <th className="px-4 py-3">Nama</th>
+                                        <th className="px-4 py-3 text-right">Jumlah</th>
+                                    </tr>
+                                )}
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {reportType === 'sales' && transactions.length > 0 ? transactions.map((t) => (
+                                    <tr key={t.id} className="hover:bg-slate-50 border-b border-slate-50 last:border-0">
+                                        <td className="px-2 py-2.5 whitespace-nowrap text-[11px] font-medium text-slate-500">
+                                            {new Date(t.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                        </td>
+                                        <td className="px-2 py-2.5 font-bold uppercase text-[10px] text-emerald-700 tracking-tighter truncate max-w-[80px]">
+                                            {t.transaction_number}
+                                        </td>
+                                        <td className="px-2 py-2.5 text-[11px] font-semibold text-slate-700 truncate max-w-[70px]">
+                                            {t.members?.name || '-'}
+                                        </td>
+                                        <td className="px-2 py-2.5 text-right font-black text-slate-900 text-[11px]">
+                                            {t.total_amount?.toLocaleString()}
+                                        </td>
+                                        <td className="px-2 py-2.5">
+                                            <div className="flex items-center justify-center gap-1.5">
+                                                <button className="p-1.5 hover:bg-emerald-50 rounded-lg text-emerald-600 transition-colors">
+                                                    <Eye className="w-3.5 h-3.5" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteTransaction(t.id)}
+                                                    className="p-1.5 hover:bg-red-50 rounded-lg text-red-500 transition-colors"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )) : null}
+                                {reportType === 'stock' && products.length > 0 ? products.map((p) => (
+                                    <tr key={p.id} className="hover:bg-slate-50">
+                                        <td className="px-4 py-3">
+                                            <p className="font-bold">{p.name}</p>
+                                            <p className="text-[10px] text-slate-400">{p.sku || '-'}</p>
+                                        </td>
+                                        <td className="px-4 py-3">{p.categories?.name || '-'}</td>
+                                        <td className={cn("px-4 py-3 text-right font-bold", p.stock_quantity <= p.min_stock ? "text-red-500" : "text-emerald-500")}>
+                                            {p.stock_quantity} {p.unit}
+                                        </td>
+                                        <td className="px-4 py-3 text-right text-slate-500">
+                                            Rp {p.purchase_price?.toLocaleString()}
+                                        </td>
+                                    </tr>
+                                )) : null}
+                                {reportType === 'member' && members.length > 0 ? members.map((m) => (
+                                    <tr key={m.id} className="hover:bg-slate-50">
+                                        <td className="px-4 py-3">
+                                            <p className="font-bold">{m.name}</p>
+                                            <p className="text-[10px] text-slate-400">{m.phone}</p>
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <span className={cn(
+                                                "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase",
+                                                m.member_level === 'platinum' ? "bg-purple-100 text-purple-700" :
+                                                    m.member_level === 'gold' ? "bg-amber-100 text-amber-700" :
+                                                        m.member_level === 'silver' ? "bg-slate-100 text-slate-700" : "bg-emerald-100 text-emerald-700"
+                                            )}>
+                                                {m.member_level}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 text-right">{m.total_points}</td>
+                                        <td className="px-4 py-3 text-right font-bold">Rp {m.total_spending?.toLocaleString()}</td>
+                                    </tr>
+                                )) : null}
+                                {reportType === 'expense' && expensesList.length > 0 ? expensesList.map((e) => (
+                                    <tr key={e.id} className="hover:bg-slate-50">
+                                        <td className="px-4 py-3 whitespace-nowrap">{new Date(e.expense_date).toLocaleDateString('id-ID')}</td>
+                                        <td className="px-4 py-3">{e.expense_categories?.name || '-'}</td>
+                                        <td className="px-4 py-3 font-medium">{e.name}</td>
+                                        <td className="px-4 py-3 text-right font-bold text-red-500">Rp {e.amount?.toLocaleString()}</td>
+                                    </tr>
+                                )) : null}
+                            </tbody>
+                        </table>
+                        {((reportType === 'sales' && !transactions.length) ||
+                            (reportType === 'stock' && !products.length) ||
+                            (reportType === 'member' && !members.length) ||
+                            (reportType === 'expense' && !expensesList.length)) && (
+                                <div className="p-8 text-center text-slate-400 font-medium">
+                                    Tidak ada data untuk periode ini
+                                </div>
+                            )}
+                    </div>
+                </div>
+
+
                 {/* Export Buttons */}
                 <div className="grid grid-cols-2 gap-3">
                     <button
@@ -624,7 +674,7 @@ export default function ReportsPage() {
                     </button>
                     <button className="bg-emerald-500 p-4 rounded-xl flex items-center justify-center gap-2 font-bold text-white text-sm shadow-lg shadow-emerald-500/20 active:scale-95 transition-transform">
                         <Share2 className="w-4 h-4" />
-                        Kirim via WA
+                        Kirim ke WA
                     </button>
                 </div>
 
