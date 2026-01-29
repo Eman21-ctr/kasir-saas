@@ -240,6 +240,10 @@ export default function AddProductPage() {
                                 <option value="ltr">Liter</option>
                                 <option value="box">Box</option>
                                 <option value="btl">Botol</option>
+                                <option value="sak">Sak</option>
+                                <option value="pack">Pack</option>
+                                <option value="gantong">Gantong</option>
+                                <option value="toples">Toples</option>
                             </select>
                         </div>
                     </div>

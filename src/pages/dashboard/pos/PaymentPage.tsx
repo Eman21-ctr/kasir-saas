@@ -10,6 +10,7 @@ type CartItem = {
     qty: number;
     selling_price: number;
     purchase_price: number;
+    unit: string;
 };
 
 export default function PaymentPage() {
@@ -134,7 +135,7 @@ export default function PaymentPage() {
                 product_id: item.id,
                 product_name: item.name,
                 quantity: item.qty,
-                unit: 'pcs',
+                unit: item.unit || 'pcs',
                 purchase_price: item.purchase_price || 0,
                 selling_price: item.selling_price,
                 subtotal: item.qty * item.selling_price,

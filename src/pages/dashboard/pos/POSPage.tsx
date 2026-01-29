@@ -15,6 +15,7 @@ type Product = {
     category_id: number;
     is_active: boolean;
     is_favorite: boolean;
+    unit: string;
 };
 
 type CartItem = Product & {

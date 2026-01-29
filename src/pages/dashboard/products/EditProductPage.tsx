@@ -250,6 +250,10 @@ export default function EditProductPage() {
                                 <option value="kg">Kg</option>
                                 <option value="btl">Botol</option>
                                 <option value="box">Box</option>
+                                <option value="sak">Sak</option>
+                                <option value="pack">Pack</option>
+                                <option value="gantong">Gantong</option>
+                                <option value="toples">Toples</option>
                             </select>
                         </div>
                     </div>
