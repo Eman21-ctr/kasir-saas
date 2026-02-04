@@ -3,12 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import {
     ShoppingCart, Package, Users, BarChart3, History,
-    AlertTriangle, ChevronRight, TrendingUp, Receipt, Wallet
+    AlertTriangle, ChevronRight, TrendingUp, Receipt, Wallet, LogOut
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function DashboardPage() {
     const navigate = useNavigate();
+    const { business, role, permissions, loading: authLoading } = useAuth();
+
     const [businessName, setBusinessName] = useState('');
     const [todaySales, setTodaySales] = useState(0);
     const [todayTransactions, setTodayTransactions] = useState(0);
@@ -16,30 +19,23 @@ export default function DashboardPage() {
     const [greeting, setGreeting] = useState('');
 
     useEffect(() => {
-        fetchData();
+        if (!authLoading && business) {
+            fetchData();
+        }
 
         const hour = new Date().getHours();
         if (hour < 12) setGreeting('Selamat Pagi');
         else if (hour < 15) setGreeting('Selamat Siang');
         else if (hour < 18) setGreeting('Selamat Sore');
         else setGreeting('Selamat Malam');
-    }, []);
+    }, [authLoading, business]);
 
     const fetchData = async () => {
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
+            setBusinessName(business.business_name);
 
-            const { data: business } = await supabase
-                .from('businesses')
-                .select('*')
-                .eq('user_id', user.id)
-                .single();
-
-            if (business) {
-                setBusinessName(business.business_name);
-
-                // Today's transactions
+            // Fetch Sales Stats if has permission
+            if (role === 'shop_owner' || permissions.reports) {
                 const startDate = new Date();
                 startDate.setHours(0, 0, 0, 0);
 
@@ -52,8 +48,10 @@ export default function DashboardPage() {
 
                 setTodaySales(transactions?.reduce((sum, t) => sum + t.total_amount, 0) || 0);
                 setTodayTransactions(transactions?.length || 0);
+            }
 
-                // Low stock products
+            // Fetch Stock Info if has permission
+            if (role === 'shop_owner' || permissions.stock) {
                 const { data: lowStock } = await supabase
                     .from('products')
                     .select('id')
@@ -69,19 +67,46 @@ export default function DashboardPage() {
     };
 
     const quickActions = [
-        { icon: ShoppingCart, label: 'Kasir', path: '/dashboard/pos', color: 'bg-emerald-500', shadowColor: 'shadow-emerald-500/30' },
-        { icon: Package, label: 'Produk', path: '/dashboard/products', color: 'bg-blue-500', shadowColor: 'shadow-blue-500/30' },
-        { icon: Users, label: 'Member', path: '/dashboard/members', color: 'bg-purple-500', shadowColor: 'shadow-purple-500/30' },
-        { icon: BarChart3, label: 'Laporan', path: '/dashboard/reports', color: 'bg-amber-500', shadowColor: 'shadow-amber-500/30' },
-    ];
+        {
+            icon: ShoppingCart, label: 'Kasir', path: '/dashboard/pos', color: 'bg-emerald-500', shadowColor: 'shadow-emerald-500/30',
+            show: role === 'shop_owner' || permissions.pos
+        },
+        {
+            icon: Package, label: 'Stok', path: '/dashboard/products/stock', color: 'bg-blue-500', shadowColor: 'shadow-blue-500/30',
+            show: role === 'shop_owner' || permissions.stock
+        },
+        {
+            icon: Users, label: 'Member', path: '/dashboard/members', color: 'bg-purple-500', shadowColor: 'shadow-purple-500/30',
+            show: role === 'shop_owner' || permissions.pos // Member usually for POS users
+        },
+        {
+            icon: BarChart3, label: 'Laporan', path: '/dashboard/reports', color: 'bg-amber-500', shadowColor: 'shadow-amber-500/30',
+            show: role === 'shop_owner' || permissions.reports
+        },
+    ].filter(a => a.show);
 
     return (
         <div className="min-h-screen bg-slate-50 pb-24 font-sans">
 
             {/* Header */}
-            <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 pb-14">
-                <p className="text-emerald-100 text-sm font-medium">{greeting} 👋</p>
-                <h1 className="text-2xl font-bold text-white mt-1">{businessName}</h1>
+            <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 pb-14 flex justify-between items-start">
+                <div>
+                    <p className="text-emerald-100 text-sm font-medium">{greeting} 👋</p>
+                    <h1 className="text-2xl font-bold text-white mt-1">{businessName}</h1>
+                    <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-widest mt-1">
+                        {role === 'shop_owner' ? 'Pemilik Toko' : 'Staf Kasir'}
+                    </p>
+                </div>
+                <button
+                    onClick={async () => {
+                        await supabase.auth.signOut();
+                        navigate('/login');
+                    }}
+                    className="p-2.5 bg-white/10 text-white rounded-xl active:scale-95 transition-all flex items-center gap-2 backdrop-blur-md border border-white/20"
+                >
+                    <LogOut className="w-5 h-5" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Keluar</span>
+                </button>
             </div>
 
             {/* Sales Card */}

@@ -1,17 +1,24 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutGrid, ShoppingCart, Package, Settings } from 'lucide-react';
+import { LayoutGrid, ShoppingCart, Package, Settings, BarChart3 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function DashboardLayout() {
     const navigate = useNavigate();
     const location = useLocation();
+    const { permissions, role, loading } = useAuth();
 
     const navItems = [
-        { label: 'Beranda', icon: LayoutGrid, path: '/dashboard' },
-        { label: 'Kasir', icon: ShoppingCart, path: '/dashboard/pos' }, // Point of Sale
-        { label: 'Produk', icon: Package, path: '/dashboard/products' },
-        { label: 'Pengaturan', icon: Settings, path: '/dashboard/settings' },
+        { label: 'Beranda', icon: LayoutGrid, path: '/dashboard', show: true },
+        { label: 'Kasir', icon: ShoppingCart, path: '/dashboard/pos', show: role === 'shop_owner' || permissions.pos },
+        { label: 'Stock', icon: Package, path: '/dashboard/products/stock', show: role === 'shop_owner' || permissions.stock },
+        { label: 'Laporan', icon: BarChart3, path: '/dashboard/reports', show: role === 'shop_owner' || permissions.reports },
+        { label: 'Setelan', icon: Settings, path: '/dashboard/settings', show: role === 'shop_owner' || permissions.settings },
     ];
+
+    const filteredNavItems = navItems.filter(item => item.show);
+
+    if (loading) return null;
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans flex flex-col">
@@ -23,7 +30,7 @@ export default function DashboardLayout() {
             {/* Bottom Navigation Bar - Fixed */}
             <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] px-6 py-3 pb-5 z-50">
                 <div className="flex justify-between items-center max-w-md mx-auto">
-                    {navItems.map((item) => {
+                    {filteredNavItems.map((item) => {
                         const isActive = location.pathname === item.path;
                         return (
                             <button

@@ -3,11 +3,14 @@ import { supabase } from '../../lib/supabase';
 import { Calendar, TrendingUp, TrendingDown, ShoppingCart, Apple as PiggyBank, ChevronDown, Share2, Download, Loader2, Package, Users, Wallet, Eye, Trash2, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import * as XLSX from 'xlsx';
+import { useAuth } from '../../hooks/useAuth';
 
 type Period = 'today' | 'week' | 'month' | 'custom';
 type ReportType = 'sales' | 'stock' | 'member' | 'expense';
 
 export default function ReportsPage() {
+    const { business, loading: authLoading } = useAuth();
+
     const [loading, setLoading] = useState(true);
     const [period, setPeriod] = useState<Period>('today');
     const [reportType, setReportType] = useState<ReportType>('sales');
@@ -43,8 +46,10 @@ export default function ReportsPage() {
     const [loadingDetail, setLoadingDetail] = useState(false);
 
     useEffect(() => {
-        fetchReports();
-    }, [period, reportType, startDate, endDate]);
+        if (!authLoading && business) {
+            fetchReports();
+        }
+    }, [period, reportType, startDate, endDate, authLoading, business]);
 
     const getDateRange = () => {
         const now = new Date();
@@ -78,15 +83,7 @@ export default function ReportsPage() {
     const fetchReports = async () => {
         try {
             setLoading(true);
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-
-            const { data: business } = await supabase
-                .from('businesses')
-                .select('id, logo_url')
-                .eq('user_id', user.id)
-                .single();
-            if (!business) return;
+            if (!business) return; // Ensure business is available from useAuth
             setLogoUrl(business.logo_url || '');
 
             const { start, end } = getDateRange();

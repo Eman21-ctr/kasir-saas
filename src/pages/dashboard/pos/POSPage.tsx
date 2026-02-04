@@ -3,6 +3,7 @@ import { supabase } from '../../../lib/supabase';
 import { Search, ShoppingCart, Minus, Plus, X, ChevronRight, Loader2, User, Star, Filter, ChevronDown, Store } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../hooks/useAuth';
 
 // Types
 type Product = {
@@ -36,6 +37,8 @@ type Member = {
 
 export default function POSPage() {
     const navigate = useNavigate();
+    const { business, loading: authLoading } = useAuth();
+
     const [loading, setLoading] = useState(true);
     const [products, setProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
@@ -61,56 +64,48 @@ export default function POSPage() {
 
     // Load Data
     useEffect(() => {
-        fetchPOSData();
-    }, []);
+        if (!authLoading && business) {
+            fetchPOSData();
+        }
+    }, [authLoading, business]);
 
     const fetchPOSData = async () => {
         try {
             setLoading(true);
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
+            setLogoUrl(business.logo_url || '');
 
-            const { data: business } = await supabase
-                .from('businesses')
-                .select('id, logo_url')
-                .eq('user_id', user.id)
-                .single();
+            const { data: catData } = await supabase
+                .from('categories')
+                .select('id, name')
+                .eq('business_id', business.id)
+                .eq('is_active', true);
+            setCategories(catData || []);
 
-            if (business) {
-                setLogoUrl(business.logo_url || '');
-                const { data: catData } = await supabase
-                    .from('categories')
-                    .select('id, name')
-                    .eq('business_id', business.id)
-                    .eq('is_active', true);
-                setCategories(catData || []);
+            // Fetch Members
+            const { data: memData } = await supabase
+                .from('members')
+                .select('id, name, total_points, phone')
+                .eq('business_id', business.id)
+                .eq('is_active', true)
+                .order('name');
 
-                // Fetch Members
-                const { data: memData } = await supabase
-                    .from('members')
-                    .select('id, name, total_points, phone')
-                    .eq('business_id', business.id)
-                    .eq('is_active', true)
-                    .order('name');
+            // Map to alias for consistency
+            const mappedMembers = (memData || []).map(m => ({
+                id: m.id,
+                name: m.name,
+                points: m.total_points || 0,
+                phone: m.phone
+            }));
+            setMembers(mappedMembers);
 
-                // Map to alias for consistency
-                const mappedMembers = (memData || []).map(m => ({
-                    id: m.id,
-                    name: m.name,
-                    points: m.total_points || 0,
-                    phone: m.phone
-                }));
-                setMembers(mappedMembers);
-
-                // Fetch Products
-                const { data: prodData } = await supabase
-                    .from('products')
-                    .select('*')
-                    .eq('business_id', business.id)
-                    .eq('is_active', true)
-                    .order('name');
-                setProducts(prodData || []);
-            }
+            // Fetch Products
+            const { data: prodData } = await supabase
+                .from('products')
+                .select('*')
+                .eq('business_id', business.id)
+                .eq('is_active', true)
+                .order('name');
+            setProducts(prodData || []);
         } catch (error) {
             console.error("Error loading POS:", error);
         } finally {

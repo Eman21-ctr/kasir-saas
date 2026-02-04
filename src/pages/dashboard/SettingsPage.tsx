@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { Store, LogOut, Printer, ChevronRight, Shield, Sparkles, BookOpen } from 'lucide-react';
+import { Store, LogOut, Printer, ChevronRight, Shield, Sparkles, BookOpen, Users } from 'lucide-react';
 
 export default function SettingsPage() {
     const navigate = useNavigate();
@@ -73,6 +73,12 @@ export default function SettingsPage() {
                             icon={Store}
                             label="Informasi Usaha"
                             onClick={() => navigate('/dashboard/settings/profile')}
+                        />
+                        <MenuParams
+                            icon={Users}
+                            label="Manajemen Staf"
+                            sub="Atur Tim & Hak Akses"
+                            onClick={() => navigate('/dashboard/settings/staff')}
                         />
                         <MenuParams
                             icon={Sparkles}

@@ -11,6 +11,7 @@ import EditProductPage from './pages/dashboard/products/EditProductPage';
 import CategoriesPage from './pages/dashboard/products/CategoriesPage';
 import StockManagementPage from './pages/dashboard/products/StockManagementPage';
 import StockAlertsPage from './pages/dashboard/products/StockAlertsPage';
+import StaffManagementPage from './pages/dashboard/settings/StaffManagementPage';
 import POSPage from './pages/dashboard/pos/POSPage';
 import PaymentPage from './pages/dashboard/pos/PaymentPage';
 import TransactionHistoryPage from './pages/dashboard/pos/TransactionHistoryPage';
@@ -68,6 +69,7 @@ function App() {
 
           {/* Settings */}
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="settings/staff" element={<StaffManagementPage />} />
           <Route path="settings/profile" element={<BusinessInfoPage />} />
           <Route path="settings/loyalty" element={<LoyaltySettingsPage />} />
           <Route path="settings/printer" element={<PrinterSettingsPage />} />

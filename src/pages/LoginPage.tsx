@@ -30,7 +30,9 @@ export default function LoginPage() {
             if (isPhone) {
                 // Remove non-numeric chars
                 const cleanPhone = identifier.replace(/[^0-9]/g, '');
-                // 0812... -> 0812...@kasirku.local
+
+                // We use @kasirku.local for now as it's the current standard in the system.
+                // In the future, this can be @kasirku.id or similar.
                 emailToUse = `${cleanPhone}@kasirku.local`;
             }
 

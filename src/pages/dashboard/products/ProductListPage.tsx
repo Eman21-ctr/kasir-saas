@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
 import { Search, Plus, Package, AlertCircle, Heart, FolderOpen, Store } from 'lucide-react';
 import { cn } from '../../../lib/utils';
+import { useAuth } from '../../../hooks/useAuth';
 
 type Product = {
     id: number;
@@ -17,27 +18,23 @@ type Product = {
 
 export default function ProductListPage() {
     const navigate = useNavigate();
+    const { business, loading: authLoading } = useAuth();
+
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [filter, setFilter] = useState<'all' | 'out_of_stock' | 'favorite'>('all');
     const [logoUrl, setLogoUrl] = useState('');
 
-    useEffect(() => { fetchProducts(); }, []);
+    useEffect(() => {
+        if (!authLoading && business) {
+            fetchProducts();
+        }
+    }, [authLoading, business]);
 
     const fetchProducts = async () => {
         try {
             setLoading(true);
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-
-            const { data: business } = await supabase
-                .from('businesses')
-                .select('id, business_name, logo_url')
-                .eq('user_id', user.id)
-                .single();
-
-            if (!business) return;
             setLogoUrl(business.logo_url || '');
 
             const { data, error } = await supabase
