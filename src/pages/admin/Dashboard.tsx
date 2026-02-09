@@ -27,7 +27,15 @@ export default function Dashboard() {
         try {
             const { data, error } = await supabase
                 .from('activation_codes')
-                .select('*')
+                .select(`
+                    *,
+                    used_by_user:users (
+                        phone_number,
+                        businesses (
+                            business_name
+                        )
+                    )
+                `)
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
@@ -94,10 +102,16 @@ export default function Dashboard() {
         checkSession();
     }, [navigate]);
 
-    const filteredCodes = activationCodes.filter(c =>
-        c.code.includes(searchTerm.toUpperCase()) ||
-        (c.partner_name && c.partner_name.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    const filteredCodes = activationCodes.filter(c => {
+        const businessName = c.used_by_user?.businesses?.[0]?.business_name || '';
+        const phoneNumber = c.used_by_user?.phone_number || '';
+        const partnerName = c.partner_name || '';
+
+        return c.code.includes(searchTerm.toUpperCase()) ||
+            partnerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            businessName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            phoneNumber.includes(searchTerm);
+    });
 
     if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
 
@@ -208,7 +222,7 @@ export default function Dashboard() {
                                     <th className="px-6 py-4">Code</th>
                                     <th className="px-6 py-4">Status</th>
                                     <th className="px-6 py-4">Status Penggunaan</th>
-                                    <th className="px-6 py-4">Partner</th>
+                                    <th className="px-6 py-4">Tenant (Nama Toko & HP)</th>
                                     <th className="px-6 py-4 text-right">Actions</th>
                                 </tr>
                             </thead>
@@ -240,7 +254,14 @@ export default function Dashboard() {
                                             )}
                                         </td>
                                         <td className="px-6 py-4 text-slate-600 font-medium">
-                                            {code.partner_name || '-'}
+                                            {code.is_used ? (
+                                                <div className="flex flex-col">
+                                                    <span className="font-bold text-slate-800">{code.used_by_user?.businesses?.[0]?.business_name || 'No Name'}</span>
+                                                    <span className="text-xs text-slate-500">{code.used_by_user?.phone_number || '-'}</span>
+                                                </div>
+                                            ) : (
+                                                <span className="text-slate-400 italic">Belum digunakan</span>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex items-center justify-end gap-2">
