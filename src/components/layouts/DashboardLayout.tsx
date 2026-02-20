@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutGrid, ShoppingCart, Package, Settings, BarChart3 } from 'lucide-react';
+import { LayoutGrid, ShoppingCart, Package, Settings, BarChart3, TrendingUp } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -11,9 +11,9 @@ export default function DashboardLayout() {
     const navItems = [
         { label: 'Beranda', icon: LayoutGrid, path: '/dashboard', show: true },
         { label: 'Kasir', icon: ShoppingCart, path: '/dashboard/pos', show: role === 'shop_owner' || permissions.pos },
-        { label: 'Stock', icon: Package, path: '/dashboard/products/stock', show: role === 'shop_owner' || permissions.stock },
+        { label: 'Produk', icon: Package, path: '/dashboard/products', show: role === 'shop_owner' || permissions.stock },
+        { label: 'Stok', icon: TrendingUp, path: '/dashboard/products/stock', show: role === 'shop_owner' || permissions.stock },
         { label: 'Laporan', icon: BarChart3, path: '/dashboard/reports', show: role === 'shop_owner' || permissions.reports },
-        { label: 'Setelan', icon: Settings, path: '/dashboard/settings', show: role === 'shop_owner' || permissions.settings },
     ];
 
     const filteredNavItems = navItems.filter(item => item.show);

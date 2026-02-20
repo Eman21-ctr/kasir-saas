@@ -6,6 +6,7 @@ import {
     Settings2, Save, X, Loader2, Store, AlertCircle
 } from 'lucide-react';
 import { cn } from '../../../lib/utils';
+import { useAuth } from '../../../hooks/useAuth';
 
 type Product = {
     id: number;
@@ -22,6 +23,7 @@ type Product = {
 export default function StockManagementPage() {
     const navigate = useNavigate();
     const location = useLocation();
+    const { business, loading: authLoading } = useAuth();
 
     // Support deep link from alerts
     const searchParams = new URLSearchParams(location.search);
@@ -44,21 +46,14 @@ export default function StockManagementPage() {
     const [formNotes, setFormNotes] = useState('');
 
     useEffect(() => {
-        fetchProducts();
-    }, []);
+        if (!authLoading && business) {
+            fetchProducts();
+        }
+    }, [authLoading, business]);
 
     const fetchProducts = async () => {
         try {
             setLoading(true);
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-
-            const { data: business } = await supabase
-                .from('businesses')
-                .select('id, logo_url')
-                .eq('user_id', user.id)
-                .single();
-            if (!business) return;
             setLogoUrl(business.logo_url || '');
 
             const { data } = await supabase
@@ -75,6 +70,7 @@ export default function StockManagementPage() {
             setLoading(false);
         }
     };
+
 
     const handleRestock = async () => {
         if (!selectedProduct || !formQty || !formPrice || saving) return;
@@ -184,9 +180,18 @@ export default function StockManagementPage() {
                         )}
                     </div>
                 </div>
-                <div className="text-right">
-                    <h1 className="text-sm font-black text-slate-900 uppercase">Manajemen Stok</h1>
-                    <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Inventory Control</p>
+                <div className="flex items-center gap-4">
+                    <div className="text-right hidden sm:block">
+                        <h1 className="text-xs font-black text-slate-900 uppercase">Manajemen Stok</h1>
+                        <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Inventory Control</p>
+                    </div>
+                    <button
+                        onClick={() => navigate('/dashboard/products/new')}
+                        className="bg-emerald-500 text-white p-2 rounded-xl shadow-lg shadow-emerald-500/20 active:scale-95 transition-all"
+                        title="Tambah Barang Baru"
+                    >
+                        <Plus className="w-5 h-5" />
+                    </button>
                 </div>
             </div>
 
@@ -221,10 +226,17 @@ export default function StockManagementPage() {
                     {loading ? (
                         <div className="py-20 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-emerald-500" /></div>
                     ) : filteredProducts.length === 0 ? (
-                        <div className="py-20 text-center bg-white rounded-3xl border border-dashed border-slate-200">
+                        <div className="py-12 text-center bg-white rounded-3xl border border-dashed border-slate-200 p-6">
                             <Package className="w-12 h-12 text-slate-200 mx-auto mb-3" />
-                            <p className="text-slate-400 font-bold text-sm">Barang tidak ditemukan</p>
+                            <p className="text-slate-500 font-bold text-sm mb-4">Belum ada barang untuk dikelola stoknya.</p>
+                            <button
+                                onClick={() => navigate('/dashboard/products/new')}
+                                className="bg-emerald-500 text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-emerald-500/20 active:scale-95 transition-all inline-flex items-center gap-2"
+                            >
+                                <Plus className="w-4 h-4" /> Tambah Barang Baru
+                            </button>
                         </div>
+
                     ) : (
                         filteredProducts.map(product => (
                             <div key={product.id} className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm space-y-4">

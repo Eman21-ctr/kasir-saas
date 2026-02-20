@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
-import { Search, Plus, Package, AlertCircle, Heart, FolderOpen, Store } from 'lucide-react';
+import { Search, Plus, Package, AlertCircle, Heart, FolderOpen, Store, TrendingUp } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { useAuth } from '../../../hooks/useAuth';
 
@@ -82,8 +82,16 @@ export default function ProductListPage() {
                         <button
                             onClick={() => navigate('/dashboard/products/categories')}
                             className="p-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 transition-all shadow-sm"
+                            title="Kategori"
                         >
                             <FolderOpen className="w-5 h-5" />
+                        </button>
+                        <button
+                            onClick={() => navigate('/dashboard/products/stock')}
+                            className="p-2.5 bg-white border border-slate-200 text-emerald-600 rounded-xl hover:bg-emerald-50 transition-all shadow-sm"
+                            title="Manajemen Stok"
+                        >
+                            <TrendingUp className="w-5 h-5" />
                         </button>
                         <button
                             onClick={() => navigate('/dashboard/products/new')}
@@ -93,6 +101,7 @@ export default function ProductListPage() {
                             Tambah
                         </button>
                     </div>
+
                 </div>
 
                 {/* Search */}
