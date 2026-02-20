@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { ArrowLeft, Key, CheckCircle, MessageSquare, AlertTriangle, Loader2 } from 'lucide-react';
@@ -8,8 +8,38 @@ export default function ActivationPage() {
     const [code, setCode] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [checking, setChecking] = useState(true);
+
+    useEffect(() => {
+        checkExistingAccount();
+    }, []);
+
+    const checkExistingAccount = async () => {
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+                // If logged in, check if they have a business
+                const { data: biz } = await supabase
+                    .from('businesses')
+                    .select('id')
+                    .eq('user_id', session.user.id)
+                    .maybeSingle();
+
+                if (biz) {
+                    // Already has a business, go to dashboard
+                    navigate('/dashboard');
+                    return;
+                }
+            }
+        } catch (err) {
+            console.error("Auth check error:", err);
+        } finally {
+            setChecking(false);
+        }
+    };
 
     const handleVerify = async () => {
+
         if (!code || code.length < 6) {
             setError('Kode harus 6 karakter');
             return;
@@ -50,7 +80,17 @@ export default function ActivationPage() {
         }
     };
 
+    if (checking) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
+                <Loader2 className="w-10 h-10 animate-spin text-emerald-500 mb-4" />
+                <p className="text-slate-500 font-medium">Memeriksa status akun...</p>
+            </div>
+        );
+    }
+
     return (
+
         <div className="min-h-screen bg-slate-50 font-sans">
             {/* Header */}
             <div className="bg-white p-4 flex items-center shadow-sm">

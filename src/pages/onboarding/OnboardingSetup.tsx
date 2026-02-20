@@ -35,57 +35,95 @@ export default function OnboardingSetup() {
     const handleFinish = async () => {
         setLoading(true);
         try {
-            // 1. REGISTER USER (using fake email based on phone for now to avoid SMS setup complexity)
-            // Format: [phone]@kasirku.local
+            // 0. Check for existing session
+            const { data: { session: existingSession } } = await supabase.auth.getSession();
+            let userId = existingSession?.user?.id;
             const email = `${phoneNumber}@kasirku.local`;
-            const password = pin; // Using 6 digit PIN as password
 
-            const { data: authData, error: authError } = await supabase.auth.signUp({
-                email: email,
-                password: password,
-                options: {
-                    data: {
-                        role: 'shop_owner',
-                        phone_number: phoneNumber,
+            if (!userId) {
+                // 1. REGISTER USER (if not logged in)
+                const password = pin; // Using 6 digit PIN as password
+
+                const { data: authData, error: authError } = await supabase.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: {
+                            role: 'shop_owner',
+                            phone_number: phoneNumber,
+                        }
                     }
+                });
+
+                if (authError) {
+                    // If user already exists (422), try to sign in
+                    if (authError.status === 422 || authError.message.includes('already registered')) {
+                        console.log("User already registered, attempting sign in...");
+                        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+                            email: email,
+                            password: password,
+                        });
+
+                        if (signInError) throw new Error('User sudah terdaftar tapi PIN salah. Silakan gunakan menu Login.');
+                        userId = signInData.user?.id;
+                    } else {
+                        throw authError;
+                    }
+                } else if (!authData.user) {
+                    throw new Error('Gagal membuat user.');
+                } else {
+                    userId = authData.user.id;
                 }
-            });
+            }
 
-            if (authError) throw authError;
-            if (!authData.user) throw new Error('Gagal membuat user.');
+            if (!userId) throw new Error('ID User tidak ditemukan.');
 
-            const userId = authData.user.id;
-
-            // 2. CRITICAL: Create Public User Record FIRST
-            // This satisfies the Foreign Key constraint for the businesses table
-            // We explicitly set the UUID to match the Auth UUID
+            // 2. CRITICAL: Create/Update Public User Record
             const { error: userError } = await supabase
                 .from('users')
                 .upsert({
-                    id: userId, // Must match Auth ID
+                    id: userId, // Primary ID should match Auth ID
                     auth_id: userId,
                     email: email,
                     phone_number: phoneNumber,
                     role: 'shop_owner',
                     is_active: true,
                     activation_code: activationCode
-                }, { onConflict: 'email' });
+                }, { onConflict: 'email' }); // Still use email as conflict target since it's unique
 
             if (userError) throw userError;
 
-            // 3. Create Business
-            // Now valid because user_id (FK) exists in public.users
-            const { error: businessError } = await supabase
+            // 3. Create/Update Business
+            // Check if business already exists for this user to avoid double entry if retrying
+            const { data: existingBiz } = await supabase
                 .from('businesses')
-                .insert([{
-                    user_id: userId,
-                    business_name: businessName,
-                    business_type: businessType,
-                    phone: phoneNumber,
-                    is_active: true
-                }]);
+                .select('id')
+                .eq('user_id', userId)
+                .maybeSingle();
 
-            if (businessError) throw businessError;
+            if (!existingBiz) {
+                const { error: businessError } = await supabase
+                    .from('businesses')
+                    .insert([{
+                        user_id: userId,
+                        business_name: businessName,
+                        business_type: businessType,
+                        phone: phoneNumber,
+                        is_active: true
+                    }]);
+
+                if (businessError) throw businessError;
+            } else {
+                // Update basic info if it already exists
+                await supabase
+                    .from('businesses')
+                    .update({
+                        business_name: businessName,
+                        business_type: businessType,
+                        phone: phoneNumber
+                    })
+                    .eq('user_id', userId);
+            }
 
             // 4. Mark Code as Used
             const { error: codeError } = await supabase
@@ -107,11 +145,13 @@ export default function OnboardingSetup() {
             }, 2000);
 
         } catch (error: any) {
-            alert('Gagal setup: ' + error.message);
+            console.error("Setup Error:", error);
+            alert('Gagal setup: ' + (error.message || 'Terjadi kesalahan internal.'));
         } finally {
             setLoading(false);
         }
     };
+
 
     const businessTypes = [
         { id: 'warung_sembako', label: 'Warung Sembako', icon: ShoppingBag },

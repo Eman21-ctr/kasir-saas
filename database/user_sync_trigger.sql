@@ -7,8 +7,9 @@
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-    INSERT INTO public.users (auth_id, email, role, is_active)
+    INSERT INTO public.users (id, auth_id, email, role, is_active)
     VALUES (
+        NEW.id,
         NEW.id,
         NEW.email,
         COALESCE((NEW.raw_user_meta_data->>'role')::user_role_enum, 'shop_owner'::user_role_enum),
@@ -18,6 +19,7 @@ BEGIN
     SET auth_id = NEW.id,
         role = EXCLUDED.role,
         is_active = TRUE;
+
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
