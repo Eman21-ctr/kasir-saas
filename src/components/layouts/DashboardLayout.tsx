@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutGrid, ShoppingCart, Package, Settings, BarChart3, TrendingUp } from 'lucide-react';
+import { LayoutGrid, ShoppingCart, Package, BarChart3, TrendingUp } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../hooks/useAuth';
 
