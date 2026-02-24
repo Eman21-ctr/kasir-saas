@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
-import { Search, Plus, Package, AlertCircle, Heart, FolderOpen, Store, TrendingUp } from 'lucide-react';
+import { Search, Plus, Package, AlertCircle, Heart, FolderOpen, Store, TrendingUp, Settings2 } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { useAuth } from '../../../hooks/useAuth';
 
@@ -78,27 +78,34 @@ export default function ProductListPage() {
                         <h1 className="text-2xl font-extrabold text-slate-900">Daftar Barang</h1>
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Manajemen Stok & Harga</p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         <button
                             onClick={() => navigate('/dashboard/products/categories')}
-                            className="p-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 transition-all shadow-sm"
+                            className="p-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 transition-all shadow-sm group"
                             title="Kategori"
                         >
-                            <FolderOpen className="w-5 h-5" />
+                            <FolderOpen className="w-5 h-5 group-hover:scale-110 transition-transform" />
                         </button>
                         <button
                             onClick={() => navigate('/dashboard/products/stock')}
-                            className="p-2.5 bg-white border border-slate-200 text-emerald-600 rounded-xl hover:bg-emerald-50 transition-all shadow-sm"
-                            title="Manajemen Stok"
+                            className="bg-white border border-emerald-200 text-emerald-600 px-3 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shadow-sm hover:bg-emerald-50 active:scale-95 transition-all"
                         >
-                            <TrendingUp className="w-5 h-5" />
+                            <TrendingUp className="w-4 h-4" />
+                            Stok Masuk
+                        </button>
+                        <button
+                            onClick={() => navigate('/dashboard/products/stock?adjust=true')}
+                            className="bg-white border border-slate-200 text-slate-600 px-3 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shadow-sm hover:bg-slate-50 active:scale-95 transition-all"
+                        >
+                            <Settings2 className="w-4 h-4" />
+                            Sesuaikan
                         </button>
                         <button
                             onClick={() => navigate('/dashboard/products/new')}
-                            className="bg-emerald-500 text-white px-4 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-95 transition-all"
+                            className="bg-emerald-500 text-white px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-95 transition-all"
                         >
                             <Plus className="w-4 h-4" />
-                            Tambah
+                            Produk
                         </button>
                     </div>
 

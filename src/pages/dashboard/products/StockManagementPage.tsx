@@ -40,6 +40,14 @@ export default function StockManagementPage() {
     const [showAdjustModal, setShowAdjustModal] = useState(false);
     const [saving, setSaving] = useState(false);
 
+    useEffect(() => {
+        if (searchParams.get('adjust') === 'true') {
+            // We'll need a way to select a product if redirected here without one, 
+            // but for now, we just ensure the view is ready.
+            // If they just click "Sesuaikan" from ProductList, they come here to pick a product first.
+        }
+    }, [location.search]);
+
     // Form States
     const [formQty, setFormQty] = useState('1');
     const [formPrice, setFormPrice] = useState('');

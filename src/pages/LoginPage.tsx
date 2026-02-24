@@ -86,8 +86,8 @@ export default function LoginPage() {
                 <div className="bg-emerald-600 p-8 text-center relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
                     <div className="relative z-10">
-                        <div className="mx-auto bg-white/20 w-16 h-16 rounded-2xl flex items-center justify-center mb-4 backdrop-blur-sm rotate-3 shadow-lg">
-                            <Lock className="w-8 h-8 text-white" />
+                        <div className="mx-auto bg-white/20 w-16 h-16 rounded-2xl flex items-center justify-center mb-4 backdrop-blur-sm rotate-3 shadow-lg p-2">
+                            <img src="/pwa-192x192.png" alt="KasirKu Logo" className="w-10 h-10 object-contain" />
                         </div>
                         <h2 className="text-3xl font-bold text-white mb-1">KasirKu</h2>
                         <p className="text-emerald-100 text-sm">Masuk untuk kelola tokomu</p>
@@ -168,7 +168,7 @@ export default function LoginPage() {
                 </div>
             </div>
 
-            <p className="fixed bottom-6 text-slate-400 text-xs font-medium">© 2026 KasirKu SaaS</p>
+            <p className="fixed bottom-6 text-slate-400 text-xs font-medium">© 2026 KasirKu</p>
         </div>
     );
 }

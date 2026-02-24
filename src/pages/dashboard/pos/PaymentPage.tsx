@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
 import { ArrowLeft, Banknote, CreditCard, Check, Printer, Home, Loader2, Share2, ScanBarcode, User, Store, Sparkles } from 'lucide-react';
 import { cn } from '../../../lib/utils';
+import PrintReceipt from '../../../components/PrintReceipt';
 
 type CartItem = {
     id: number;
@@ -177,11 +178,53 @@ export default function PaymentPage() {
         }
     };
 
+    const handlePrint = () => {
+        window.print();
+    };
+
+    const handleWhatsApp = () => {
+        if (!successData) return;
+        const businessName = successData.business?.business_name || 'Toko';
+        const trxNo = successData.trxNo;
+        const total = successData.total.toLocaleString('id-ID');
+
+        const message = `*Struk Pembayaran ${businessName}*\n\n` +
+            `No. Ref: ${trxNo}\n` +
+            `Total: Rp ${total}\n\n` +
+            `Terima kasih telah berbelanja!`;
+
+        const encodedMessage = encodeURIComponent(message);
+        window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
+    };
+
     // Success View
     if (successData) {
         return (
-            <div className="h-screen bg-emerald-500 flex flex-col items-center justify-center p-6 text-center animate-in zoom-in duration-300">
-                <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm">
+            <div className="min-h-screen bg-emerald-500 flex flex-col items-center justify-center p-6 text-center animate-in zoom-in duration-300 print:bg-white print:p-0">
+                {/* Print Only Receipt */}
+                <div className="hidden print:block">
+                    <PrintReceipt
+                        shopName={successData.business?.business_name}
+                        shopAddress={successData.business?.address}
+                        shopPhone={successData.business?.phone}
+                        transactionNumber={successData.trxNo}
+                        transactionDate={new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        items={cart.map((item: any) => ({
+                            name: item.name,
+                            qty: item.qty,
+                            price: item.selling_price,
+                            subtotal: item.qty * item.selling_price
+                        }))}
+                        subtotal={totalAmount}
+                        discount={redemptionValue}
+                        total={successData.total}
+                        cashReceived={paymentMethod === 'cash' ? numericCash : successData.total}
+                        change={successData.change}
+                        paymentMethod={paymentMethod}
+                    />
+                </div>
+
+                <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm print:hidden">
                     <div className="mb-6 flex flex-col items-center">
                         {successData.business?.logo_url ? (
                             <div className="w-16 h-16 bg-slate-50 rounded-2xl border border-slate-100 overflow-hidden mb-3">
@@ -221,11 +264,17 @@ export default function PaymentPage() {
                     </div>
 
                     <div className="space-y-3">
-                        <button className="w-full bg-emerald-500 text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 active:scale-95">
+                        <button
+                            onClick={handlePrint}
+                            className="w-full bg-emerald-500 text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
+                        >
                             <Printer className="w-5 h-5" />
                             Cetak Struk
                         </button>
-                        <button className="w-full bg-white border border-slate-200 text-slate-700 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-50 transition-all">
+                        <button
+                            onClick={handleWhatsApp}
+                            className="w-full bg-white border border-slate-200 text-slate-700 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-50 transition-all"
+                        >
                             <Share2 className="w-5 h-5" />
                             Kirim WhatsApp
                         </button>
