@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
-import { Search, Plus, Package, AlertCircle, Heart, FolderOpen, Store, TrendingUp, Settings2 } from 'lucide-react';
+import { Search, Plus, Package, AlertCircle, Heart, Settings2 } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { useAuth } from '../../../hooks/useAuth';
 
@@ -24,7 +24,7 @@ export default function ProductListPage() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [filter, setFilter] = useState<'all' | 'out_of_stock' | 'favorite'>('all');
-    const [logoUrl, setLogoUrl] = useState('');
+
 
     useEffect(() => {
         if (!authLoading && business) {
@@ -35,7 +35,7 @@ export default function ProductListPage() {
     const fetchProducts = async () => {
         try {
             setLoading(true);
-            setLogoUrl(business.logo_url || '');
+
 
             const { data, error } = await supabase
                 .from('products')
@@ -61,37 +61,18 @@ export default function ProductListPage() {
 
     return (
         <div className="min-h-screen bg-slate-50 pb-24 font-sans text-slate-800">
-            {/* Header with Logo */}
-            <div className="bg-white sticky top-0 z-20 px-6 py-3 border-b border-slate-100 shadow-sm flex items-center justify-between">
-                <div className="w-10 h-10 bg-emerald-50 rounded-xl border border-emerald-100 overflow-hidden flex items-center justify-center">
-                    {logoUrl ? (
-                        <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
-                    ) : (
-                        <Store className="w-5 h-5 text-emerald-600" />
-                    )}
-                </div>
-            </div>
 
             <div className="p-4 space-y-3 pt-2">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl font-extrabold text-slate-900">Daftar Barang</h1>
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Manajemen Stok & Harga</p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
+                <div>
+                    <h1 className="text-2xl font-extrabold text-slate-900">Daftar Barang</h1>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Manajemen Stok & Harga</p>
+                    <div className="flex items-center gap-2 mt-3">
                         <button
-                            onClick={() => navigate('/dashboard/products/categories')}
-                            className="p-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 transition-all shadow-sm group"
-                            title="Kategori"
+                            onClick={() => navigate('/dashboard/products/new')}
+                            className="bg-emerald-500 text-white px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-95 transition-all"
                         >
-                            <FolderOpen className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                        </button>
-                        <button
-                            onClick={() => navigate('/dashboard/products/stock')}
-                            className="bg-white border border-emerald-200 text-emerald-600 px-3 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shadow-sm hover:bg-emerald-50 active:scale-95 transition-all"
-                        >
-                            <TrendingUp className="w-4 h-4" />
-                            Stok Masuk
+                            <Plus className="w-4 h-4" />
+                            Produk
                         </button>
                         <button
                             onClick={() => navigate('/dashboard/products/stock?adjust=true')}
@@ -101,14 +82,13 @@ export default function ProductListPage() {
                             Sesuaikan
                         </button>
                         <button
-                            onClick={() => navigate('/dashboard/products/new')}
-                            className="bg-emerald-500 text-white px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-95 transition-all"
+                            onClick={() => navigate('/dashboard/products/categories')}
+                            className="bg-white border border-slate-200 text-slate-600 px-3 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shadow-sm hover:bg-slate-50 active:scale-95 transition-all"
                         >
                             <Plus className="w-4 h-4" />
-                            Produk
+                            Kategori
                         </button>
                     </div>
-
                 </div>
 
                 {/* Search */}

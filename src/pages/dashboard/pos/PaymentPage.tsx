@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
-import { ArrowLeft, Banknote, CreditCard, Check, Printer, Home, Loader2, Share2, ScanBarcode, User, Store, Sparkles } from 'lucide-react';
+import { ArrowLeft, Banknote, CreditCard, Check, Printer, Home, Loader2, Share2, ScanBarcode, User, Sparkles } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import PrintReceipt from '../../../components/PrintReceipt';
 
@@ -18,7 +18,7 @@ export default function PaymentPage() {
     const navigate = useNavigate();
     const location = useLocation();
     const { cart, totalAmount, member } = location.state || { cart: [], totalAmount: 0, member: null };
-    const [logoUrl, setLogoUrl] = useState('');
+
 
     // Dynamic Loyalty Settings
     const [loyaltyConfig, setLoyaltyConfig] = useState({
@@ -48,7 +48,7 @@ export default function PaymentPage() {
                 .single();
 
             if (business) {
-                setLogoUrl(business.logo_url || '');
+
                 setLoyaltyConfig({
                     isLoyaltyEnabled: business.is_loyalty_enabled || false,
                     pointValue: business.point_value_requirement || 10000,
@@ -294,18 +294,8 @@ export default function PaymentPage() {
     // Payment Form View
     return (
         <div className="bg-slate-50">
-            {/* Header with Logo */}
-            <div className="bg-white sticky top-0 z-20 px-6 py-2 border-b border-slate-100 shadow-sm">
-                <div className="w-9 h-9 bg-emerald-50 rounded-xl border border-emerald-100 overflow-hidden flex items-center justify-center">
-                    {logoUrl ? (
-                        <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
-                    ) : (
-                        <Store className="w-5 h-5 text-emerald-600" />
-                    )}
-                </div>
-            </div>
 
-            <div className="p-3 max-w-md mx-auto w-full space-y-2 pt-1.5">
+            <div className="p-3 max-w-md mx-auto w-full space-y-2 pt-3">
                 <div className="flex items-center gap-2 mb-1">
                     <button onClick={() => navigate(-1)} className="p-1 -ml-1 hover:bg-slate-100 rounded-full transition-colors">
                         <ArrowLeft className="w-5 h-5 text-slate-500" />

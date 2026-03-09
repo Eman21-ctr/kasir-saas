@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Calendar, TrendingUp, TrendingDown, ShoppingCart, Apple as PiggyBank, ChevronDown, Share2, Download, Loader2, Package, Users, Wallet, Eye, Trash2, X } from 'lucide-react';
+import { Calendar, TrendingUp, TrendingDown, Apple as PiggyBank, ChevronDown, Share2, Download, Loader2, Package, Users, Wallet, Eye, Trash2, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import * as XLSX from 'xlsx';
 import { useAuth } from '../../hooks/useAuth';
@@ -37,7 +37,7 @@ export default function ReportsPage() {
 
     // Expenses
     const [totalExpenses, setTotalExpenses] = useState(0);
-    const [logoUrl, setLogoUrl] = useState('');
+
 
     // Modal state
     const [selectedItem, setSelectedItem] = useState<any>(null);
@@ -84,7 +84,7 @@ export default function ReportsPage() {
         try {
             setLoading(true);
             if (!business) return; // Ensure business is available from useAuth
-            setLogoUrl(business.logo_url || '');
+
 
             const { start, end } = getDateRange();
 
@@ -358,30 +358,22 @@ export default function ReportsPage() {
 
     return (
         <div className="min-h-screen bg-slate-50 pb-24 font-sans text-slate-800">
-            {/* Header with Logo */}
-            <div className="bg-white sticky top-0 z-20 px-6 py-3 border-b border-slate-100 shadow-sm flex items-center justify-between">
-                <div className="w-10 h-10 bg-emerald-50 rounded-xl border border-emerald-100 overflow-hidden flex items-center justify-center">
-                    {logoUrl ? (
-                        <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
-                    ) : (
-                        <ShoppingCart className="w-5 h-5 text-emerald-600" />
-                    )}
-                </div>
-                <button
-                    onClick={() => {
-                        const text = `Laporan ${reportLabel()} - ${periodLabel()}\nTotal: Rp ${totalSales.toLocaleString()}`;
-                        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
-                    }}
-                    className="p-2 hover:bg-slate-100 rounded-full transition-colors"
-                >
-                    <Share2 className="w-5 h-5 text-slate-500" />
-                </button>
-            </div>
 
-            <div className="p-6 space-y-6 pt-2">
-                <div>
-                    <h1 className="text-2xl font-extrabold text-slate-900">Laporan</h1>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Performa Bisnis Anda</p>
+            <div className="p-6 space-y-6 pt-4">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-extrabold text-slate-900">Laporan</h1>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Performa Bisnis Anda</p>
+                    </div>
+                    <button
+                        onClick={() => {
+                            const text = `Laporan ${reportLabel()} - ${periodLabel()}\nTotal: Rp ${totalSales.toLocaleString()}`;
+                            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
+                        }}
+                        className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                    >
+                        <Share2 className="w-5 h-5 text-slate-500" />
+                    </button>
                 </div>
 
                 {/* Report Type Selector */}

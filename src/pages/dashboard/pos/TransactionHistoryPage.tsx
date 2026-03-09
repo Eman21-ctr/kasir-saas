@@ -29,7 +29,7 @@ export default function TransactionHistoryPage() {
     const [loading, setLoading] = useState(true);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [search, setSearch] = useState('');
-    const [logoUrl, setLogoUrl] = useState('');
+
     const [selectedTrx, setSelectedTrx] = useState<Transaction | null>(null);
 
     // Date Filters
@@ -91,7 +91,7 @@ export default function TransactionHistoryPage() {
                 return;
             }
 
-            setLogoUrl(business.logo_url || '');
+
 
             const { start, end } = getDateRange();
 
@@ -288,15 +288,7 @@ export default function TransactionHistoryPage() {
                     </div>
                 </div>
             )}
-            <div className="bg-white sticky top-0 z-20 px-6 py-3 border-b border-slate-100 shadow-sm">
-                <div className="w-10 h-10 bg-emerald-50 rounded-xl border border-emerald-100 overflow-hidden flex items-center justify-center">
-                    {logoUrl ? (
-                        <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
-                    ) : (
-                        <History className="w-5 h-5 text-emerald-600" />
-                    )}
-                </div>
-            </div>
+
 
             <div className="p-4 space-y-3 pt-4">
                 <div className="flex items-center justify-between">

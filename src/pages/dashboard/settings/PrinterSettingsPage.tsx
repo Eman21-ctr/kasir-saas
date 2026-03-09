@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { useNavigate } from 'react-router-dom';
+
 import {
-    ArrowLeft, Printer, Bluetooth, Smartphone,
-    CheckCircle2, AlertCircle, ChevronRight, Play, Info, Store
+    Printer, Bluetooth, Smartphone,
+    CheckCircle2, AlertCircle, ChevronRight, Play, Info
 } from 'lucide-react';
 
 export default function PrinterSettingsPage() {
-    const navigate = useNavigate();
+
     const [business, setBusiness] = useState<any>(null);
 
     useEffect(() => {
@@ -82,21 +82,8 @@ export default function PrinterSettingsPage() {
 
     return (
         <div className="min-h-screen bg-slate-50 pb-24 font-sans text-slate-800">
-            {/* Header with Logo Only */}
-            <div className="bg-white sticky top-0 z-20 px-6 py-3 border-b border-slate-100 shadow-sm flex items-center justify-between">
-                <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-slate-100 rounded-full transition-colors">
-                    <ArrowLeft className="w-5 h-5 text-slate-500" />
-                </button>
-                <div className="w-10 h-10 bg-emerald-50 rounded-xl border border-emerald-100 overflow-hidden flex items-center justify-center">
-                    {business?.logo_url ? (
-                        <img src={business.logo_url} alt="Logo" className="w-full h-full object-cover" />
-                    ) : (
-                        <Store className="w-5 h-5 text-emerald-600" />
-                    )}
-                </div>
-            </div>
 
-            <div className="p-6 space-y-6 pt-2">
+            <div className="p-6 space-y-6 pt-4">
                 {/* Body Title */}
                 <div>
                     <h1 className="text-2xl font-extrabold text-slate-900">Printer Struk</h1>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
-import { ArrowLeft, Save, Loader2, Calculator, Trash2, Store, ScanBarcode } from 'lucide-react';
+import { Save, Loader2, Calculator, Trash2, ScanBarcode } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 
 export default function EditProductPage() {
@@ -9,7 +9,7 @@ export default function EditProductPage() {
     const { id } = useParams();
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
-    const [logoUrl, setLogoUrl] = useState('');
+
 
     // Form States
     const [name, setName] = useState('');
@@ -52,13 +52,8 @@ export default function EditProductPage() {
                 setBarcode(product.barcode || '');
 
                 // 2. Get Business & Categories
-                const { data: business } = await supabase
-                    .from('businesses')
-                    .select('id, logo_url')
-                    .eq('id', product.business_id)
-                    .single();
 
-                if (business) setLogoUrl(business.logo_url || '');
+
 
                 const { data: catData } = await supabase
                     .from('categories')
@@ -127,29 +122,16 @@ export default function EditProductPage() {
 
     return (
         <div className="min-h-screen bg-slate-50 pb-10 font-sans text-slate-800">
-            {/* Header with Logo and Action */}
-            <div className="bg-white sticky top-0 z-20 px-6 py-3 border-b border-slate-100 shadow-sm flex items-center justify-between">
-                <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-slate-100 rounded-full transition-colors">
-                    <ArrowLeft className="w-5 h-5 text-slate-500" />
-                </button>
-                <div className="flex items-center gap-4">
+
+            <div className="p-6 pt-4 max-w-md mx-auto">
+                <div className="flex items-center justify-between mb-4">
+                    <div>
+                        <h1 className="text-2xl font-extrabold text-slate-900">Edit Barang</h1>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Perbarui Informasi Produk</p>
+                    </div>
                     <button onClick={handleDelete} className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition-colors">
                         <Trash2 className="w-5 h-5" />
                     </button>
-                    <div className="w-10 h-10 bg-emerald-50 rounded-xl border border-emerald-100 overflow-hidden flex items-center justify-center">
-                        {logoUrl ? (
-                            <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
-                        ) : (
-                            <Store className="w-5 h-5 text-emerald-600" />
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            <div className="p-6 pt-2 max-w-md mx-auto">
-                <div className="mb-4">
-                    <h1 className="text-2xl font-extrabold text-slate-900">Edit Barang</h1>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Perbarui Informasi Produk</p>
                 </div>
 
                 <div className="space-y-3.5">

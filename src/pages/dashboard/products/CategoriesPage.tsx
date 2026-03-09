@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Pencil, Trash2, Loader2, FolderOpen, Save, X, Store } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Trash2, Loader2, FolderOpen, Save, X } from 'lucide-react';
 
 type Category = {
     id: number;
@@ -14,7 +14,7 @@ export default function CategoriesPage() {
     const [loading, setLoading] = useState(true);
     const [categories, setCategories] = useState<Category[]>([]);
     const [businessId, setBusinessId] = useState<number | null>(null);
-    const [logoUrl, setLogoUrl] = useState('');
+
 
     // Modal State
     const [showModal, setShowModal] = useState(false);
@@ -40,7 +40,7 @@ export default function CategoriesPage() {
             if (!business) return;
 
             setBusinessId(business.id);
-            setLogoUrl(business.logo_url || '');
+
 
             const { data, error } = await supabase
                 .from('categories')
@@ -99,16 +99,6 @@ export default function CategoriesPage() {
 
     return (
         <div className="min-h-screen bg-slate-50 pb-24 font-sans text-slate-800">
-            {/* Header with Logo */}
-            <div className="bg-white sticky top-0 z-20 px-6 py-3 border-b border-slate-100 shadow-sm">
-                <div className="w-10 h-10 bg-emerald-50 rounded-xl border border-emerald-100 overflow-hidden flex items-center justify-center">
-                    {logoUrl ? (
-                        <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
-                    ) : (
-                        <Store className="w-5 h-5 text-emerald-600" />
-                    )}
-                </div>
-            </div>
 
             <div className="p-6 space-y-6 pt-4">
                 <div className="flex items-center justify-between">

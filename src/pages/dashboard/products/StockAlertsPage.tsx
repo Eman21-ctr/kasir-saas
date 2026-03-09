@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, AlertTriangle, Plus, Package, Clock, Store } from 'lucide-react';
+import { AlertTriangle, Plus, Package, Clock } from 'lucide-react';
 
 type Product = {
     id: number;
@@ -17,7 +17,7 @@ export default function StockAlertsPage() {
     const [loading, setLoading] = useState(true);
     const [outOfStock, setOutOfStock] = useState<Product[]>([]);
     const [lowStock, setLowStock] = useState<Product[]>([]);
-    const [logoUrl, setLogoUrl] = useState('');
+
 
     useEffect(() => {
         fetchAlerts();
@@ -35,9 +35,7 @@ export default function StockAlertsPage() {
                 .eq('user_id', user.id)
                 .single();
 
-            if (business) {
-                setLogoUrl(business.logo_url || '');
-            }
+
 
             // Fetch all products
             const { data: products } = await supabase
@@ -70,21 +68,8 @@ export default function StockAlertsPage() {
 
     return (
         <div className="min-h-screen bg-slate-50 pb-24 font-sans text-slate-800">
-            {/* Header with Logo Only */}
-            <div className="bg-white sticky top-0 z-20 px-6 py-3 border-b border-slate-100 shadow-sm flex items-center justify-between">
-                <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-slate-100 rounded-full transition-colors">
-                    <ArrowLeft className="w-5 h-5 text-slate-500" />
-                </button>
-                <div className="w-10 h-10 bg-emerald-50 rounded-xl border border-emerald-100 overflow-hidden flex items-center justify-center">
-                    {logoUrl ? (
-                        <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
-                    ) : (
-                        <Store className="w-5 h-5 text-emerald-600" />
-                    )}
-                </div>
-            </div>
 
-            <div className="p-6 pt-2 max-w-md mx-auto">
+            <div className="p-6 pt-4 max-w-md mx-auto">
                 <div className="mb-6">
                     <h1 className="text-2xl font-extrabold text-slate-900">Peringatan Stok</h1>
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Stok Menipis & Habis</p>
@@ -135,7 +120,7 @@ export default function StockAlertsPage() {
                                             </p>
                                         </div>
                                         <button
-                                            onClick={() => navigate(`/dashboard/products/stock?search=${p.name}`)}
+                                            onClick={() => navigate(`/dashboard/products?search=${p.name}`)}
                                             className="p-3 bg-red-500 text-white rounded-xl shadow-md active:scale-90 transition-all"
                                         >
                                             <Plus className="w-4 h-4" />
@@ -170,7 +155,7 @@ export default function StockAlertsPage() {
                                             <p className="text-[10px] text-amber-600 font-bold uppercase tracking-tight">Sisa {p.stock_quantity} {p.unit}</p>
                                         </div>
                                         <button
-                                            onClick={() => navigate(`/dashboard/products/stock?search=${p.name}`)}
+                                            onClick={() => navigate(`/dashboard/products?search=${p.name}`)}
                                             className="p-3 bg-amber-500 text-white rounded-xl shadow-md active:scale-90 transition-all"
                                         >
                                             <Plus className="w-4 h-4" />

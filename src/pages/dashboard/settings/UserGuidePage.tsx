@@ -1,32 +1,11 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '../../../lib/supabase';
-import { useNavigate } from 'react-router-dom';
-import {
-    ArrowLeft, LayoutGrid, ShoppingCart, Package, Users,
-    BarChart3, Wallet, Printer, ChevronDown, BookOpen, Store
-} from 'lucide-react';
+import { useState } from 'react';
 import { cn } from '../../../lib/utils';
+import { LayoutGrid, ShoppingCart, Package, Users, BarChart3, Wallet, Printer, ChevronDown, BookOpen } from 'lucide-react';
 
 export default function UserGuidePage() {
-    const navigate = useNavigate();
-    const [business, setBusiness] = useState<any>(null);
     const [openSection, setOpenSection] = useState<string | null>(null);
 
-    useEffect(() => {
-        fetchBusinessInfo();
-    }, []);
 
-    const fetchBusinessInfo = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-            const { data } = await supabase
-                .from('businesses')
-                .select('logo_url')
-                .eq('user_id', user.id)
-                .single();
-            setBusiness(data);
-        }
-    };
 
     const toggleSection = (id: string) => {
         setOpenSection(openSection === id ? null : id);
@@ -86,21 +65,8 @@ export default function UserGuidePage() {
 
     return (
         <div className="min-h-screen bg-slate-50 pb-24 font-sans text-slate-800">
-            {/* Header with Logo */}
-            <div className="bg-white sticky top-0 z-20 px-6 py-3 border-b border-slate-100 shadow-sm flex items-center justify-between">
-                <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-slate-100 rounded-full transition-colors">
-                    <ArrowLeft className="w-5 h-5 text-slate-500" />
-                </button>
-                <div className="w-10 h-10 bg-emerald-50 rounded-xl border border-emerald-100 overflow-hidden flex items-center justify-center">
-                    {business?.logo_url ? (
-                        <img src={business.logo_url} alt="Logo" className="w-full h-full object-cover" />
-                    ) : (
-                        <Store className="w-5 h-5 text-emerald-600" />
-                    )}
-                </div>
-            </div>
 
-            <div className="p-6 pt-2">
+            <div className="p-6 pt-4">
                 <div className="mb-6">
                     <h1 className="text-2xl font-extrabold text-slate-900">Panduan Penggunaan</h1>
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Edukasi & Tutorial Fitur</p>

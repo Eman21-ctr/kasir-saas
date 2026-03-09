@@ -30,18 +30,8 @@ export default function SettingsPage() {
 
     return (
         <div className="min-h-screen bg-slate-50 pb-24 font-sans text-slate-800">
-            {/* Header with Logo */}
-            <div className="bg-white sticky top-0 z-20 px-6 py-3 border-b border-slate-100 shadow-sm flex items-center">
-                <div className="w-10 h-10 bg-emerald-50 rounded-xl border border-emerald-100 overflow-hidden flex items-center justify-center">
-                    {profile?.logo_url ? (
-                        <img src={profile.logo_url} alt="Logo" className="w-full h-full object-cover" />
-                    ) : (
-                        <Store className="w-5 h-5 text-emerald-600" />
-                    )}
-                </div>
-            </div>
 
-            <div className="p-6 space-y-6 pt-2">
+            <div className="p-6 space-y-6 pt-4">
                 <div>
                     <h1 className="text-2xl font-extrabold text-slate-900">Pengaturan Toko</h1>
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Konfigurasi & Profil</p>

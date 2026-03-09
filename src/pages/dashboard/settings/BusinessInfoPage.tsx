@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
-import { ArrowLeft, Save, Loader2, Store, MapPin, Phone, Mail, Plus } from 'lucide-react';
+import { Save, Loader2, Store, MapPin, Phone, Mail, Plus } from 'lucide-react';
 
 export default function BusinessInfoPage() {
     const navigate = useNavigate();
@@ -124,23 +124,8 @@ export default function BusinessInfoPage() {
 
     return (
         <div className="min-h-screen bg-slate-50 pb-24 font-sans text-slate-800">
-            {/* Header with Logo */}
-            <div className="bg-white sticky top-0 z-20 px-6 py-3 border-b border-slate-100 shadow-sm">
-                <div className="flex items-center gap-3">
-                    <button onClick={() => navigate(-1)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-                        <ArrowLeft className="w-6 h-6 text-slate-500" />
-                    </button>
-                    <div className="w-10 h-10 bg-emerald-50 rounded-xl border border-emerald-100 overflow-hidden flex items-center justify-center">
-                        {logoUrl ? (
-                            <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
-                        ) : (
-                            <Store className="w-5 h-5 text-emerald-600" />
-                        )}
-                    </div>
-                </div>
-            </div>
 
-            <div className="p-6 space-y-6 pt-2">
+            <div className="p-6 space-y-6 pt-4">
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-2xl font-extrabold text-slate-900">Informasi Usaha</h1>

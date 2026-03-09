@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { Search, ShoppingCart, Minus, Plus, X, ChevronRight, Loader2, User, Star, Filter, ChevronDown, Store } from 'lucide-react';
+import { Search, ShoppingCart, Minus, Plus, X, ChevronRight, Loader2, User, Star, Filter, ChevronDown } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
@@ -48,7 +48,7 @@ export default function POSPage() {
 
     const [search, setSearch] = useState('');
     const [memberSearch, setMemberSearch] = useState('');
-    const [logoUrl, setLogoUrl] = useState('');
+
 
     const [activeCategory, setActiveCategory] = useState<number | 'all' | 'fav'>('all');
     const [showCart, setShowCart] = useState(false);
@@ -72,7 +72,7 @@ export default function POSPage() {
     const fetchPOSData = async () => {
         try {
             setLoading(true);
-            setLogoUrl(business.logo_url || '');
+
 
             const { data: catData } = await supabase
                 .from('categories')
@@ -161,17 +161,6 @@ export default function POSPage() {
     return (
         <div className="flex flex-col h-screen bg-slate-50 relative overflow-hidden">
 
-            {/* 1. Header with Logo */}
-            <div className="bg-white px-4 py-3 shadow-sm z-20 flex gap-3 items-center border-b border-slate-100">
-                <div className="w-10 h-10 bg-emerald-50 rounded-xl border border-emerald-100 overflow-hidden flex items-center justify-center flex-shrink-0">
-                    {logoUrl ? (
-                        <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
-                    ) : (
-                        <Store className="w-5 h-5 text-emerald-600" />
-                    )}
-                </div>
-                {/* Search bar removed from here */}
-            </div>
 
             {/* Title in Body */}
             <div className="px-4 pt-4 space-y-4">
@@ -333,16 +322,6 @@ export default function POSPage() {
             {/* 5. Cart Drawer / Modal */}
             {showCart && (
                 <div className="fixed inset-0 z-[100] flex flex-col bg-slate-50 animate-in slide-in-from-bottom duration-300">
-                    {/* Drawer Header with Logo */}
-                    <div className="bg-white px-3 py-1.5 border-b border-slate-100 flex items-center justify-between shadow-sm">
-                        <div className="w-8 h-8 bg-emerald-50 rounded-xl border border-emerald-100 overflow-hidden flex items-center justify-center">
-                            {logoUrl ? (
-                                <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
-                            ) : (
-                                <Store className="w-4 h-4 text-emerald-600" />
-                            )}
-                        </div>
-                    </div>
 
                     <div className="px-4 py-2 bg-white flex items-center justify-between border-b border-slate-50">
                         <div className="flex items-center gap-2.5">
